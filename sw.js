@@ -1,12 +1,12 @@
-const CACHE_NAME = 'mistletoe-photobooth-v6';
+const CACHE_NAME = 'mistletoe-photobooth-v7';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './favicon.svg',
-  './css/tokens.css?v=6',
-  './css/layout.css?v=6',
-  './css/components.css?v=6',
+  './css/tokens.css?v=7',
+  './css/layout.css?v=7',
+  './css/components.css?v=7',
   './js/state.js',
   './js/themes.js',
   './js/theme-renderer.js',
@@ -21,7 +21,7 @@ const ASSETS = [
   './js/print-animation.js',
   './js/editor.js',
   './js/share.js',
-  './js/ui.js?v=6',
+  './js/ui.js?v=7',
   './assets/custom/manifest.json',
   './assets/custom/grinch-1.png',
   './assets/custom/spiderman-1.png'
@@ -63,16 +63,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-first for all same-origin requests so deploys update immediately;
+  // fall back to cache only when offline.
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return (
-        cached ||
-        fetch(event.request).then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          return response;
-        })
-      );
-    })
+    fetch(event.request)
+      .then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

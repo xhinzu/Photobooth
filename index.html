@@ -20,9 +20,19 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..600&family=Fredoka:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="./css/tokens.css?v=6" />
-  <link rel="stylesheet" href="./css/layout.css?v=6" />
-  <link rel="stylesheet" href="./css/components.css?v=6" />
+  <link rel="stylesheet" href="./css/tokens.css?v=7" />
+  <link rel="stylesheet" href="./css/layout.css?v=7" />
+  <link rel="stylesheet" href="./css/components.css?v=7" />
+  <script>
+    // Force-clear legacy peach-era Service Worker caches if present
+    if ('caches' in window) {
+      caches.keys().then(function(keys) {
+        keys.forEach(function(k) {
+          if (k !== 'mistletoe-photobooth-v7') caches.delete(k);
+        });
+      });
+    }
+  </script>
 </head>
 <body>
   <!-- Bokeh, Snow & Stars Ambience, Vignette, and Top Fairy Garland -->
@@ -714,6 +724,6 @@
   <!-- TOAST REGION -->
   <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
 
-  <script type="module" src="./js/ui.js?v=6"></script>
+  <script type="module" src="./js/ui.js?v=7"></script>
 </body>
 </html>
