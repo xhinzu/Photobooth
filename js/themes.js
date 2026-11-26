@@ -24,6 +24,46 @@ export const SCENE_FRAMES = [
 
 export const STRIP_THEMES = [
   {
+    id: 'holiday-lights',
+    name: 'Holiday Lights',
+    tagline: 'Black strip, fairy-light border & gold frame',
+    accentColor: '#E8283A',
+    accentHover: '#FFC83D',
+    packId: 'christmas',
+    background: {
+      type: 'solid',
+      color: '#07070A',
+    },
+    border: {
+      style: 'fairy-lights',
+      color: '#FFC83D',
+      thickness: 24,
+      radius: 4,
+    },
+    photoFrame: {
+      shape: 'gold-frame',
+      tiltMaxDeg: 0,
+      shadow: true,
+      glossy: false,
+      polaroidPadBottom: 0,
+      tapeCorners: false,
+      perPhotoCaption: false,
+    },
+    defaults: {
+      filter: 'color',
+      adjustments: { grain: 8, vignette: 12, warmth: 6 },
+    },
+    caption: {
+      font: 'sans',
+      color: '#FFF4E0',
+      defaultText: 'Merry & Bright',
+    },
+    overlay: {
+      type: 'snow',
+      layer: 'above',
+    },
+  },
+  {
     id: 'midnight-reel',
     name: 'Midnight Reel',
     tagline: '1940s B&W film, sprockets & snow',
@@ -395,9 +435,9 @@ export function getThemeById(id) {
 export function loadSavedThemeId() {
   try {
     const saved = localStorage.getItem(THEME_STORAGE_KEY);
-    return saved && STRIP_THEMES.some((t) => t.id === saved) ? saved : 'midnight-reel';
+    return saved && STRIP_THEMES.some((t) => t.id === saved) ? saved : 'holiday-lights';
   } catch {
-    return 'midnight-reel';
+    return 'holiday-lights';
   }
 }
 

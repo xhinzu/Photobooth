@@ -1,16 +1,16 @@
-const CACHE_NAME = 'mistletoe-photobooth-v4';
+const CACHE_NAME = 'mistletoe-photobooth-v5';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './favicon.svg',
-  './css/tokens.css',
-  './css/layout.css',
-  './css/components.css',
-  './css/skin-midnight.css',
+  './css/tokens.css?v=5',
+  './css/layout.css?v=5',
+  './css/components.css?v=5',
   './js/state.js',
   './js/themes.js',
   './js/theme-renderer.js',
+  './js/fairy-lights.js',
   './js/film-fx.js',
   './js/audio.js',
   './js/camera.js',
@@ -21,8 +21,10 @@ const ASSETS = [
   './js/print-animation.js',
   './js/editor.js',
   './js/share.js',
-  './js/ui.js',
-  './assets/custom/manifest.json'
+  './js/ui.js?v=5',
+  './assets/custom/manifest.json',
+  './assets/custom/grinch-1.png',
+  './assets/custom/spiderman-1.png'
 ];
 
 self.addEventListener('install', (event) => {

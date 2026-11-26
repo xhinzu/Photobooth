@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" data-skin="midnight">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Mistletoe Photobooth — Analog Studio Print</title>
-  <meta name="description" content="Warm, analog-inspired studio photobooth. Capture, edit, decorate, and print photo strips locally in your browser with zero uploads." />
-  <meta name="theme-color" content="#F6E9DC" />
+  <title>Mistletoe Photobooth — Holiday Night Studio</title>
+  <meta name="description" content="Festive Christmas night studio photobooth. Capture, edit, decorate, and print photo strips locally in your browser." />
+  <meta name="theme-color" content="#07070A" />
 
   <!-- Open Graph -->
   <meta property="og:title" content="Mistletoe Photobooth" />
@@ -18,25 +18,42 @@
   <!-- Google Fonts: Anton (Condensed Display), DM Sans (UI/Body), IBM Plex Mono (Technical/Captions) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Courier+Prime:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..600&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,700;1,900&family=Special+Elite&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..600&family=Fredoka:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="./css/tokens.css" />
-  <link rel="stylesheet" href="./css/layout.css" />
-  <link rel="stylesheet" href="./css/components.css" />
-  <link rel="stylesheet" href="./css/skin-midnight.css" />
+  <link rel="stylesheet" href="./css/tokens.css?v=5" />
+  <link rel="stylesheet" href="./css/layout.css?v=5" />
+  <link rel="stylesheet" href="./css/components.css?v=5" />
 </head>
 <body>
-  <!-- Single-canvas 1940s-50s Film FX & Snow Overlay -->
-  <canvas id="film-fx-canvas" class="film-fx-canvas" aria-hidden="true"></canvas>
+  <!-- Bokeh, Snow & Stars Ambience, Vignette, and Top Fairy Garland -->
+  <div class="bokeh-layer" id="bokeh-layer" aria-hidden="true"></div>
+  <canvas id="film-fx-canvas" class="ambience-canvas" aria-hidden="true"></canvas>
+  <div class="night-vignette" aria-hidden="true"></div>
+  <div class="fairy-garland fairy-garland-top" id="garland-top" aria-hidden="true"></div>
 
-  <!-- Title Card Intro (shown once per session in Film mode) -->
-  <div class="title-card-overlay" id="title-card-overlay" hidden role="dialog" aria-label="Film Title Card Intro">
+  <!-- Grinch & Spider-Man Character Layer -->
+  <div class="char-grinch-setup" id="char-grinch" title="Tap for a holiday smirk">
+    <img src="./assets/custom/grinch-1.png" alt="Mischievous green holiday character peeking" loading="lazy" />
+  </div>
+  <div class="char-spidey-setup" id="char-spidey">
+    <svg class="spidey-web-svg" viewBox="0 0 4 100" preserveAspectRatio="none" aria-hidden="true">
+      <line x1="2" y1="0" x2="2" y2="100" stroke="#FFF4E0" stroke-width="2" />
+    </svg>
+    <img src="./assets/custom/spiderman-1.png" alt="Spider-Man hanging upside down on a web" loading="lazy" />
+  </div>
+
+  <!-- Title / Loading Intro -->
+  <div class="title-card-overlay" id="title-card-overlay" hidden role="dialog" aria-label="Holiday Studio Intro">
     <div class="title-card-frame">
-      <p class="eyebrow">A MISTLETOE PICTURE</p>
-      <h2 class="title-card-heading">Presenting: Your Christmas Portrait</h2>
-      <p class="title-card-sub">Captured on 35mm Midnight Reel &middot; Local Darkroom</p>
+      <div class="title-card-chars">
+        <img src="./assets/custom/grinch-1.png" alt="Holiday Grinch" loading="lazy" />
+        <img src="./assets/custom/spiderman-1.png" alt="Spider-Man" loading="lazy" />
+      </div>
+      <p class="eyebrow">MISTLETOE STUDIO PRESENTS</p>
+      <h2 class="title-card-heading">Christmas Night Photobooth</h2>
+      <p class="title-card-sub">Step inside, strike a pose, take home a glowing strip.</p>
       <div class="leader-circle-wipe tabular" id="intro-leader-num" aria-live="polite">3</div>
-      <button type="button" class="btn btn-secondary btn-sm" id="btn-skip-intro">Skip Intro</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-skip-intro">Skip</button>
     </div>
   </div>
   <!-- Layered paper grain & faint edge vignette -->
@@ -77,12 +94,11 @@
           </button>
         </div>
 
-        <button type="button" class="btn btn-ghost btn-sm" id="btn-film-mode" aria-pressed="true" title="Toggle 1940s B&W Film Skin">
-          Film Mode: On
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-lights-toggle" aria-pressed="true" aria-label="Toggle fairy lights">
+          Lights: On
         </button>
-
-        <button type="button" class="btn btn-ghost btn-sm" id="btn-crackle-toggle" aria-pressed="false" title="Toggle soft vinyl crackle loop">
-          Crackle: Off
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-lights-mode" aria-label="Cycle fairy lights animation mode">
+          Twinkle
         </button>
 
         <button type="button" class="btn btn-ghost btn-sm" id="btn-sound-toggle" aria-pressed="false" aria-label="Toggle shutter and printer sound">
@@ -185,11 +201,11 @@
             <div class="control-group">
               <label class="control-label" id="label-pre-filter">FILM STOCK</label>
               <div class="chip-row" role="radiogroup" aria-labelledby="label-pre-filter" id="pre-filter-group">
-                <button type="button" class="chip-btn is-active" role="radio" aria-checked="true" data-filter="bw">B&amp;W</button>
+                <button type="button" class="chip-btn is-active" role="radio" aria-checked="true" data-filter="color">Color</button>
+                <button type="button" class="chip-btn" role="radio" aria-checked="false" data-filter="bw">B&amp;W</button>
                 <button type="button" class="chip-btn" role="radio" aria-checked="false" data-filter="sepia">Sepia</button>
                 <button type="button" class="chip-btn" role="radio" aria-checked="false" data-filter="warm">Warm Film</button>
                 <button type="button" class="chip-btn" role="radio" aria-checked="false" data-filter="cool">Cool Film</button>
-                <button type="button" class="chip-btn" role="radio" aria-checked="false" data-filter="color">Color</button>
               </div>
             </div>
 
@@ -230,6 +246,7 @@
         <!-- Right Column (Desktop) / Physical Booth Machine Body -->
         <section class="booth-stage" aria-label="Photobooth Machine">
           <div class="booth-machine" id="booth-machine">
+            <div class="fairy-garland fairy-garland-machine" id="garland-machine" aria-hidden="true"></div>
             <!-- Machine Top Bezel: Lens Ring, LED Indicator, Coin Detail -->
             <div class="machine-top-bezel">
               <div class="machine-bezel-left">
@@ -276,6 +293,12 @@
                       <p class="camera-state-desc" id="camera-state-desc">
                         Allow camera permission in your browser to start shooting.
                       </p>
+                      <div class="camera-help-steps" id="camera-help-steps">
+                        <strong>Quick fix (Chrome / Brave / Safari):</strong>
+                        <span>1. Click the lock or tune icon in the address bar.</span>
+                        <span>2. Set <strong>Camera</strong> to <strong>Allow</strong>.</span>
+                        <span>3. Reload the page or tap Retry Camera.</span>
+                      </div>
                       <div class="camera-state-actions">
                         <button type="button" class="btn btn-primary btn-sm" id="btn-retry-camera">
                           Retry Camera
@@ -327,6 +350,7 @@
             <button type="button" class="btn btn-ghost btn-sm" id="btn-close-sheet">Done</button>
           </div>
           <div class="mobile-sheet-body" id="mobile-sheet-body"></div>
+          <div class="fairy-garland fairy-garland-sheet" id="garland-sheet" aria-hidden="true"></div>
         </div>
       </div>
     </main>
@@ -376,6 +400,7 @@
       <div class="editor-layout">
         <!-- Strip Preview Stage (Right on Desktop, Top on Mobile) -->
         <div class="editor-stage-col">
+          <div class="fairy-garland fairy-garland-strip" id="garland-strip" aria-hidden="true"></div>
           <div class="strip-stage" id="strip-stage">
             <div class="strip-paper-wrap" id="strip-paper-wrap">
               <canvas id="strip-canvas" aria-label="Edited photo strip preview"></canvas>
@@ -686,6 +711,6 @@
   <!-- TOAST REGION -->
   <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
 
-  <script type="module" src="./js/ui.js"></script>
+  <script type="module" src="./js/ui.js?v=5"></script>
 </body>
 </html>

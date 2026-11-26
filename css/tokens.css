@@ -1,34 +1,44 @@
 :root {
-  /* Color Palette — Warm, Analog, Editorial */
-  --bg-cream: #F6E9DC;
-  --bg-cream-deep: #EAD4C0;
-  --bg-paper: #FFFDF9;
-  --bg-surface: #FBF3EB;
-  --machine-body: #F2E2D2;
-  --machine-trim: #E3CEB9;
-  --ink: #161412;
-  --ink-muted: #5C544D;
-  --ink-subtle: #8C8279;
-  --border-hairline: rgba(22, 20, 18, 0.16);
-  --border-strong: rgba(22, 20, 18, 0.85);
+  /* Christmas Night on Black — Single Source of Truth */
+  --bg-night: #07070A;
+  --bg-navy-glow: #0E1230;
+  --bg-surface: #0E0E16;
+  --bg-elevated: #141422;
+  --machine-body: #0E0E16;
+  --machine-trim: #1C1C2B;
 
-  /* Single Accent — Muted Terracotta / Deep Red */
-  --accent: #B53D2A;
-  --accent-hover: #962F1F;
-  --accent-soft: rgba(181, 61, 42, 0.12);
+  /* Core Festive Palette */
+  --red: #E8283A;
+  --green: #17A35A;
+  --gold: #FFC83D;
+  --blue: #4CC9F0;
+  --pink: #FF4FA3;
+  --warm-white: #FFF4E0;
+
+  /* Text & Borders (WCAG AA on #07070A / #0E0E16) */
+  --ink: #FFF4E0;
+  --ink-muted: #B9B6C8;
+  --ink-subtle: #8C89A0;
+  --border-hairline: rgba(255, 244, 224, 0.16);
+  --border-gold: rgba(255, 200, 61, 0.65);
+
+  /* Active Accent (updated dynamically per theme/mode) */
+  --accent: #E8283A;
+  --accent-hover: #FFC83D;
+  --accent-glow: rgba(232, 40, 58, 0.35);
 
   /* LED Status Colors */
-  --led-idle: #8C8279;
-  --led-shooting: #C93322;
-  --led-printing: #D4882A;
-  --led-ready: #3B7A4A;
+  --led-idle: #115E36;
+  --led-shooting: #E8283A;
+  --led-printing: #FFC83D;
+  --led-ready: #17A35A;
 
   /* Typography */
-  --font-display: 'Anton', Impact, 'Arial Narrow', sans-serif;
+  --font-display: 'Mountains of Christmas', 'Fredoka', sans-serif;
   --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
 
-  /* Spacing Scale (4 / 8 / 16 / 24 / 40 / 64) */
+  /* Spacing Scale */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 16px;
@@ -37,29 +47,30 @@
   --space-6: 64px;
 
   /* Radii */
-  --radius-sm: 4px;
-  --radius-md: 10px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
   --radius-lg: 20px;
   --radius-machine: 26px;
   --radius-pill: 999px;
 
-  /* Soft Paper & Machine Shadows */
-  --shadow-btn: 0 2px 0 rgba(22, 20, 18, 0.18), 0 4px 10px -4px rgba(22, 20, 18, 0.16);
-  --shadow-btn-pressed: 0 0 0 rgba(22, 20, 18, 0.18), 0 1px 3px rgba(22, 20, 18, 0.14);
-  --shadow-paper: 0 12px 30px -10px rgba(22, 20, 18, 0.18), 0 2px 6px rgba(22, 20, 18, 0.08);
-  --shadow-machine: 0 22px 48px -16px rgba(22, 20, 18, 0.24),
-                    0 4px 12px rgba(22, 20, 18, 0.08),
-                    inset 0 2px 4px rgba(255, 253, 249, 0.75),
-                    inset 0 -3px 8px rgba(22, 20, 18, 0.08);
-  --shadow-strip: 0 18px 42px -12px rgba(22, 20, 18, 0.28), 0 4px 12px rgba(22, 20, 18, 0.1);
-  --shadow-strip-hover: 0 26px 52px -12px rgba(22, 20, 18, 0.34), 0 8px 18px rgba(22, 20, 18, 0.14);
-  --shadow-sheet: 0 -10px 32px rgba(22, 20, 18, 0.16);
+  /* Glow & Shadow Tokens */
+  --shadow-btn: 0 4px 18px rgba(232, 40, 58, 0.32), 0 2px 6px rgba(0, 0, 0, 0.6);
+  --shadow-btn-pressed: 0 1px 4px rgba(0, 0, 0, 0.7);
+  --shadow-paper: 0 14px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 200, 61, 0.18);
+  --shadow-machine: 0 24px 56px rgba(0, 0, 0, 0.8),
+                    0 0 36px rgba(14, 18, 48, 0.7),
+                    inset 0 1px 2px rgba(255, 200, 61, 0.28);
+  --shadow-strip: 0 20px 48px rgba(0, 0, 0, 0.85), 0 0 24px rgba(255, 200, 61, 0.14);
+  --shadow-strip-hover: 0 28px 60px rgba(0, 0, 0, 0.92), 0 0 30px rgba(255, 200, 61, 0.24);
+  --shadow-sheet: 0 -12px 36px rgba(0, 0, 0, 0.8);
 
   /* Motion */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --duration-fast: 150ms;
   --duration-med: 280ms;
+
+  color-scheme: dark;
 }
 
 *,
@@ -72,7 +83,9 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--bg-cream);
+  background-color: var(--bg-night);
+  background-image: radial-gradient(ellipse 80% 60% at 50% 18%, var(--bg-navy-glow) 0%, var(--bg-night) 72%);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: 16px;
@@ -82,30 +95,57 @@ body {
   overflow-x: hidden;
 }
 
-/* Layered paper grain + faint edge vignette */
-.grain-svg {
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-night);
+}
+::-webkit-scrollbar-thumb {
+  background: #2A2A3C;
+  border-radius: 3px;
+}
+
+/* Soft edge vignette */
+.night-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9990;
+  box-shadow: inset 0 0 130px rgba(0, 0, 0, 0.82);
+}
+
+/* Ambience Canvas (Snow + Twinkling Stars + Start Sparkle Burst) */
+.ambience-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Bokeh layer */
+.bokeh-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.bokeh-orb {
   position: absolute;
-  width: 0;
-  height: 0;
-  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(22px);
+  opacity: 0.16;
+  animation: bokehDrift 18s ease-in-out infinite alternate;
 }
 
-.paper-grain-layer {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9998;
-  opacity: 0.048;
-  filter: url(#paper-grain);
-  background: var(--ink);
-}
-
-.paper-vignette {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9997;
-  box-shadow: inset 0 0 110px rgba(22, 20, 18, 0.11);
+@keyframes bokehDrift {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(24px, -28px) scale(1.15); }
 }
 
 button,
@@ -123,18 +163,17 @@ button {
   cursor: pointer;
 }
 
-/* Custom subtle focus ring (replaces default browser ring) */
+/* Visible Gold Focus Ring */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--gold);
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px var(--accent-soft);
+  box-shadow: 0 0 0 4px rgba(255, 200, 61, 0.25);
 }
 
 [hidden] {
   display: none !important;
 }
 
-/* View Transitions API smooth screen glide */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 280ms;

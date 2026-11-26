@@ -23,7 +23,15 @@ import {
 } from './state.js';
 import { STRIP_THEMES, MIDNIGHT_CAPTIONS, SCENE_FRAMES, getThemeById, applyThemeToAppUI } from './themes.js';
 import { renderThemeMiniPreview } from './theme-renderer.js';
-import { startFilmFX } from './film-fx.js';
+import { startFilmFX, triggerSparkleBurst } from './film-fx.js';
+import {
+  mountFairyLights,
+  isLightsEnabled,
+  setLightsEnabled,
+  cycleLightsMode,
+  getLightsMode,
+  setLightsEffect,
+} from './fairy-lights.js';
 import {
   isSoundEnabled,
   setSoundEnabled,
@@ -83,8 +91,10 @@ const els = {
   btnResetEdits: $('btn-reset-edits'),
   btnSoundToggle: $('btn-sound-toggle'),
   labelSoundToggle: $('label-sound-toggle'),
-  btnFilmMode: $('btn-film-mode'),
-  btnCrackleToggle: $('btn-crackle-toggle'),
+  btnLightsToggle: $('btn-lights-toggle'),
+  btnLightsMode: $('btn-lights-mode'),
+  charGrinch: $('char-grinch'),
+  charSpidey: $('char-spidey'),
   filmFxCanvas: $('film-fx-canvas'),
   titleCardOverlay: $('title-card-overlay'),
   introLeaderNum: $('intro-leader-num'),
@@ -512,11 +522,14 @@ async function showFreezeSnapshot(thumbUrl) {
 
 function showCountdownTick(num) {
   const isFinal = num === 1;
+  const colors = ['red', 'gold', 'green'];
+  els.countdownNumber.dataset.color = colors[num % 3];
   els.countdownNumber.textContent = String(num);
   els.countdownNumber.classList.remove('is-visible');
   void els.countdownNumber.offsetWidth;
   els.countdownNumber.classList.add('is-visible');
   els.boothMachine.classList.toggle('is-final-second', isFinal);
+  setLightsEffect('fast');
   playCountdownTick(isFinal);
 }
 
@@ -550,6 +563,8 @@ async function runCountdownAndSnap(poseIndex, total) {
   els.boothMachine.classList.remove('is-final-second');
   els.countdownNumber.textContent = '';
   triggerFlash();
+  setLightsEffect('flash');
+  setTimeout(() => setLightsEffect(null), 260);
   playShutterThunk();
   triggerHaptic(28);
 
@@ -565,6 +580,7 @@ async function runCountdownAndSnap(poseIndex, total) {
 async function startCaptureSession(singleRetakeIndex = null) {
   ensureAudioContext();
   triggerHaptic(18);
+  triggerSparkleBurst();
   els.mobileSheetBackdrop.hidden = true;
   setBoothLed('shooting', 'SHOOTING');
 
@@ -635,6 +651,7 @@ async function startCaptureSession(singleRetakeIndex = null) {
 async function runPrintingSequence() {
   stopCamera();
   setBoothLed('printing', 'PRINTING');
+  setLightsEffect('chase-temp');
   await setScreen('printing');
 
   await playPrintSequence(state, {
@@ -651,6 +668,8 @@ async function runPrintingSequence() {
     btnSkipPrint: els.btnSkipPrint,
   });
 
+  setLightsEffect('flash');
+  setTimeout(() => setLightsEffect(null), 650);
   await finishCaptureToEditor();
 }
 
@@ -929,8 +948,8 @@ function renderStickerPackTabs() {
   customBtn.className = 'pack-tab-btn';
   customBtn.setAttribute('role', 'tab');
   customBtn.dataset.cat = '__custom__';
-  customBtn.setAttribute('aria-label', 'Uploaded custom stickers');
-  customBtn.textContent = 'My Uploads';
+  customBtn.setAttribute('aria-label', 'My Characters custom stickers');
+  customBtn.textContent = 'My Characters';
   customBtn.addEventListener('click', () => {
     activeStickerCat = '__custom__';
     renderStickerCategory();
@@ -975,7 +994,7 @@ function renderStickerCategory() {
   if (activeStickerCat === '__custom__' && !stickerSearchQuery) {
     const customs = getCustomStickers();
     if (customs.length === 0) {
-      els.stickerGrid.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">Upload a PNG or SVG to save your own sticker locally.</div>';
+      els.stickerGrid.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">Drop images in /assets/custom/ or click Upload.</div>';
       return;
     }
     for (const c of customs) {
@@ -1164,18 +1183,31 @@ function bindEvents() {
     syncSoundUI();
   });
 
-  els.btnFilmMode?.addEventListener('click', () => {
-    state.session.filmMode = !state.session.filmMode;
-    try { localStorage.setItem('mistletoe_film_mode', String(state.session.filmMode)); } catch {}
-    syncFilmModeUI();
+  els.btnLightsToggle?.addEventListener('click', () => {
+    const on = setLightsEnabled(!isLightsEnabled());
+    els.btnLightsToggle.textContent = `Lights: ${on ? 'On' : 'Off'}`;
+    els.btnLightsToggle.setAttribute('aria-pressed', String(on));
   });
 
-  els.btnCrackleToggle?.addEventListener('click', () => {
-    ensureAudioContext();
-    const on = setCrackleEnabled(!isCrackleEnabled());
-    els.btnCrackleToggle.textContent = `Crackle: ${on ? 'On' : 'Off'}`;
-    els.btnCrackleToggle.setAttribute('aria-pressed', String(on));
+  els.btnLightsMode?.addEventListener('click', () => {
+    const mode = cycleLightsMode();
+    els.btnLightsMode.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+    showToast(`Fairy lights: ${mode}`);
   });
+
+  els.charGrinch?.addEventListener('click', () => {
+    els.charGrinch.classList.add('is-smirking');
+    setTimeout(() => els.charGrinch.classList.remove('is-smirking'), 500);
+  });
+
+  // Subtle parallax for Grinch & Spider-Man on desktop mouse move
+  if (window.matchMedia('(hover: hover)').matches) {
+    window.addEventListener('mousemove', (e) => {
+      const nx = (e.clientX / window.innerWidth - 0.5) * 10;
+      const ny = (e.clientY / window.innerHeight - 0.5) * 8;
+      if (els.charGrinch) els.charGrinch.style.transform = `translate(${nx.toFixed(1)}px, ${ny.toFixed(1)}px)`;
+    });
+  }
 
   els.btnLightLeak?.addEventListener('click', () => {
     pushHistory();
@@ -1597,51 +1629,20 @@ function bindEvents() {
   });
 }
 
-/* ---------- Bootstrap ---------- */
-async function bootstrap() {
-  initEditor(
-    {
-      canvas: els.stripCanvas,
-      overlay: els.stripOverlay,
-      selectionBar: els.selectionBar,
-      selectionInfo: els.selectionBarInfo,
-      selectionActions: els.selectionBarActions,
-    },
-    {
-      onPhotoSelected: () => {
-        switchEditorTab('photo');
-        syncEditorControls();
-      },
-      onRetakeSingle: async (idx) => {
-        await setScreen('booth');
-        await initCameraStream();
-        startCaptureSession(idx);
-      },
-    }
-  );
-
-  subscribe((_state, reason) => {
-    if (reason === 'history' || reason === 'reset' || reason === 'overlay' || reason === 'selection') {
-      syncEditorControls();
-    }
-  });
-
-function syncFilmModeUI() {
-  const on = Boolean(state.session.filmMode);
-  if (on) {
-    document.documentElement.setAttribute('data-skin', 'midnight');
-  } else {
-    document.documentElement.removeAttribute('data-skin');
+function syncLightsUI() {
+  const on = isLightsEnabled();
+  const mode = getLightsMode();
+  if (els.btnLightsToggle) {
+    els.btnLightsToggle.textContent = `Lights: ${on ? 'On' : 'Off'}`;
+    els.btnLightsToggle.setAttribute('aria-pressed', String(on));
   }
-  if (els.btnFilmMode) {
-    els.btnFilmMode.textContent = `Film Mode: ${on ? 'On' : 'Off'}`;
-    els.btnFilmMode.setAttribute('aria-pressed', String(on));
+  if (els.btnLightsMode) {
+    els.btnLightsMode.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
   }
-  applyThemeToAppUI(getThemeById(state.screen === 'editor' ? state.edits.themeId : state.session.themeId));
 }
 
 async function runTitleCardIntroOnce() {
-  if (!state.session.filmMode || !els.titleCardOverlay) return;
+  if (!els.titleCardOverlay) return;
   try {
     if (sessionStorage.getItem('mistletoe_intro_seen') === '1') return;
     sessionStorage.setItem('mistletoe_intro_seen', '1');
@@ -1678,9 +1679,40 @@ async function runTitleCardIntroOnce() {
   });
 }
 
+/* ---------- Bootstrap ---------- */
+async function bootstrap() {
+  initEditor(
+    {
+      canvas: els.stripCanvas,
+      overlay: els.stripOverlay,
+      selectionBar: els.selectionBar,
+      selectionInfo: els.selectionBarInfo,
+      selectionActions: els.selectionBarActions,
+    },
+    {
+      onPhotoSelected: () => {
+        switchEditorTab('photo');
+        syncEditorControls();
+      },
+      onRetakeSingle: async (idx) => {
+        await setScreen('booth');
+        await initCameraStream();
+        startCaptureSession(idx);
+      },
+    }
+  );
+
+  subscribe((_state, reason) => {
+    if (reason === 'history' || reason === 'reset' || reason === 'overlay' || reason === 'selection') {
+      syncEditorControls();
+    }
+  });
+
   await loadCustomStickers();
-  syncFilmModeUI();
-  startFilmFX(els.filmFxCanvas, () => ({ filmMode: state.session.filmMode, screen: state.screen }));
+  mountFairyLights();
+  syncLightsUI();
+  startFilmFX(els.filmFxCanvas);
+  applyThemeToAppUI(getThemeById(state.session.themeId));
   activeStickerCat = getThemeById(state.session.themeId).packId;
   syncSoundUI();
   buildEditorControls();

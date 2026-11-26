@@ -16,13 +16,13 @@ export const DEFAULT_ADJUSTMENTS = {
 };
 
 export const PAPER_SWATCHES = [
-  { id: 'cream', label: 'Studio Cream', color: '#FFFDF9' },
-  { id: 'black', label: 'Carbon Black', color: '#161412' },
-  { id: 'white', label: 'Bright White', color: '#FFFFFF' },
-  { id: 'blush', label: 'Warm Blush', color: '#F3DDD7' },
-  { id: 'sage', label: 'Muted Sage', color: '#D9E0D4' },
-  { id: 'navy', label: 'Midnight Navy', color: '#1D2736' },
-  { id: 'red', label: 'Terracotta Red', color: '#B53D2A' },
+  { id: 'night', label: 'Midnight Black', color: '#07070A' },
+  { id: 'navy', label: 'Deep Navy', color: '#0E1230' },
+  { id: 'red', label: 'Christmas Red', color: '#8C1520' },
+  { id: 'pine', label: 'Pine Green', color: '#0F4D2B' },
+  { id: 'white', label: 'Warm White', color: '#FFF4E0' },
+  { id: 'black', label: 'Carbon Black', color: '#141418' },
+  { id: 'gold', label: 'Festive Gold', color: '#33260B' },
 ];
 
 export const PEN_COLORS = [
@@ -83,10 +83,10 @@ export const state = {
     poseCount: 4,
     layout: 'single',
     timerSeconds: 3,
-    preFilter: getThemeById(initialThemeId).defaults.filter,
+    preFilter: 'color',
     themeId: initialThemeId,
-    filmMode: loadFilmMode(),
-    matchFilmLook: true,
+    filmMode: false,
+    matchFilmLook: false,
     facingMode: 'user',
     mirrored: true,
     soundEnabled: true,

@@ -35,19 +35,23 @@ Then open [http://localhost:8080](http://localhost:8080) in your browser.
 
 To test on a mobile device over your local network, serve over HTTPS (e.g., via a local TLS proxy or tunnel) so `getUserMedia` and `navigator.share` are available.
 
-## User-Supplied Custom Images (`/assets/custom/`)
+## Custom Characters (`/assets/custom/`)
 
-Drop personal or licensed PNG, JPG, or SVG files into `assets/custom/` and list their filenames in `assets/custom/manifest.json`:
+Drop PNG, JPG, or SVG character images into `assets/custom/` and run:
 
-```json
-{
-  "images": ["my-holiday-badge.png", "family-crest.svg"]
-}
+```bash
+npm run build
 ```
 
-They will appear automatically in the **My Uploads** sticker tab (and can also be uploaded at runtime into IndexedDB). Enable **Match Film** to auto-convert custom images to high-contrast monochrome to match the Midnight Reel aesthetic.
+This runs `scripts/build-manifest.mjs` to regenerate `assets/custom/manifest.json` automatically. All listed images appear in the **My Characters** sticker tab and can be placed as draggable, scalable, rotatable stickers or strip backgrounds.
 
-> **Copyright Note:** Any images placed in `assets/custom/` or uploaded at runtime must be assets you own or have the right to use, especially if you publish this app publicly.
+> **Rights Notice:** You are responsible for ensuring you own or have permission/rights to use any images you add to `assets/custom/`, especially if this app is published publicly.
+
+## Deploying / Redeploying on Vercel
+
+```bash
+npm run build && git add -A && git commit -m "Deploy update" && git push origin main
+```
 
 ## Extending Themes & Sticker Packs
 

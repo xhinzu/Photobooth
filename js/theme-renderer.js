@@ -63,7 +63,34 @@ export function drawThemeBorder(ctx, width, height, theme) {
   const { style, color } = theme.border;
   ctx.save();
 
-  if (style === 'chrome') {
+  if (style === 'fairy-lights') {
+    const bulbColors = ['#E8283A', '#17A35A', '#FFC83D', '#4CC9F0', '#FF4FA3', '#FFF4E0'];
+    ctx.strokeStyle = 'rgba(255, 244, 224, 0.38)';
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(8, 8, width - 16, height - 16);
+
+    const drawBulb = (x, y, idx) => {
+      const col = bulbColors[idx % bulbColors.length];
+      ctx.save();
+      ctx.fillStyle = col;
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(x, y, 3.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    };
+
+    let idx = 0;
+    for (let x = 14; x <= width - 14; x += 22) {
+      drawBulb(x, 8, idx++);
+      drawBulb(x, height - 8, idx++);
+    }
+    for (let y = 28; y <= height - 28; y += 26) {
+      drawBulb(8, y, idx++);
+      drawBulb(width - 8, y, idx++);
+    }
+  } else if (style === 'chrome') {
     const grad = ctx.createLinearGradient(0, 0, width, height);
     grad.addColorStop(0, '#FFFFFF');
     grad.addColorStop(0.35, '#9FB8D6');

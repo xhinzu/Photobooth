@@ -282,6 +282,13 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
     ctx.clip();
     ctx.drawImage(offscreen, slot.x, slot.y, slot.w, slot.h);
 
+    // Gold inner frame border (Holiday Lights)
+    if (theme.photoFrame.shape === 'gold-frame') {
+      ctx.strokeStyle = '#FFC83D';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(slot.x + 1, slot.y + 1, slot.w - 2, slot.h - 2);
+    }
+
     // Double off-white inner frame border (Midnight Reel)
     if (theme.photoFrame.shape === 'double-ink') {
       ctx.strokeStyle = '#EDEBE6';
