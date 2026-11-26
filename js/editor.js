@@ -231,10 +231,21 @@ function handlePointerDown(e) {
     return;
   }
 
-  // 6. Clear selection
+  // 6. Clear selection & allow physical strip spring-drag
   state.selection = { type: null, id: null };
   syncOverlayUI();
   notify('selection');
+
+  const paperWrap = overlayEl.parentElement;
+  if (paperWrap && paperWrap.classList.contains('strip-paper-wrap')) {
+    interaction = {
+      mode: 'paper-spring',
+      paperWrap,
+      startX: e.clientX,
+      startY: e.clientY,
+    };
+    paperWrap.classList.add('is-dragging-paper');
+  }
 }
 
 function handlePointerMove(e) {
@@ -250,6 +261,13 @@ function handlePointerMove(e) {
   }
 
   if (!interaction) return;
+  if (interaction.mode === 'paper-spring') {
+    const dx = Math.max(-28, Math.min(28, (e.clientX - interaction.startX) * 0.35));
+    const dy = Math.max(-28, Math.min(28, (e.clientY - interaction.startY) * 0.35));
+    const rot = -0.55 + dx * 0.08;
+    interaction.paperWrap.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) rotate(${rot.toFixed(2)}deg)`;
+    return;
+  }
   const item = state.edits.overlays.find((o) => o.id === interaction.itemId);
   if (!item) return;
 
@@ -281,6 +299,12 @@ function handlePointerUp(e) {
     notify('history');
   }
   if (interaction) {
+    if (interaction.mode === 'paper-spring') {
+      interaction.paperWrap.classList.remove('is-dragging-paper');
+      interaction.paperWrap.style.transform = '';
+      interaction = null;
+      return;
+    }
     interaction = null;
     notify('history');
   }

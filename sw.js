@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mistletoe-photobooth-v1';
+const CACHE_NAME = 'mistletoe-photobooth-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -8,10 +8,12 @@ const ASSETS = [
   './css/layout.css',
   './css/components.css',
   './js/state.js',
+  './js/audio.js',
   './js/camera.js',
   './js/filters.js',
   './js/stickers.js',
   './js/renderer.js',
+  './js/print-animation.js',
   './js/editor.js',
   './js/share.js',
   './js/ui.js'
@@ -41,7 +43,6 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) {
-    // Network-first for external assets like Google Fonts, fallback to cache
     event.respondWith(
       fetch(event.request)
         .then((response) => {
@@ -67,4 +68,3 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
-

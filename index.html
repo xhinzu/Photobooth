@@ -25,14 +25,15 @@
   <link rel="stylesheet" href="./css/components.css" />
 </head>
 <body>
-  <!-- Subtle SVG paper grain overlay -->
+  <!-- Layered paper grain & faint edge vignette -->
   <svg class="grain-svg" aria-hidden="true" width="0" height="0">
     <filter id="paper-grain">
-      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
+      <feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="3" stitchTiles="stitch" />
       <feColorMatrix type="saturate" values="0" />
     </filter>
   </svg>
   <div class="paper-grain-layer" aria-hidden="true"></div>
+  <div class="paper-vignette" aria-hidden="true"></div>
 
   <div class="app-shell">
     <!-- Top Editorial Header -->
@@ -50,18 +51,21 @@
       <div class="header-actions">
         <div class="editor-history-controls" id="header-history" hidden>
           <button type="button" class="btn btn-ghost btn-sm" id="btn-undo" aria-label="Undo (Ctrl+Z)" disabled>
-            Undo
+            <svg class="icon-line" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6.5H10a3.5 3.5 0 1 1 0 7H7.5M6 4L3.2 6.5 6 9"/></svg>
+            <span>Undo</span>
           </button>
           <button type="button" class="btn btn-ghost btn-sm" id="btn-redo" aria-label="Redo (Ctrl+Shift+Z)" disabled>
-            Redo
+            <svg class="icon-line" viewBox="0 0 16 16" aria-hidden="true"><path d="M12.5 6.5H6a3.5 3.5 0 1 0 0 7h2.5M10 4l2.8 2.5L10 9"/></svg>
+            <span>Redo</span>
           </button>
           <button type="button" class="btn btn-ghost btn-sm" id="btn-reset-edits" aria-label="Reset all edits">
             Reset
           </button>
         </div>
 
-        <button type="button" class="btn btn-ghost btn-sm" id="btn-sound-toggle" aria-pressed="false" aria-label="Toggle shutter sound">
-          Sound: On
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-sound-toggle" aria-pressed="false" aria-label="Toggle shutter and printer sound">
+          <svg class="icon-line" id="icon-sound" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.8l3.7-3v10L5.3 10H2.5V6zm9.2-.3a3.8 3.8 0 0 1 0 4.6m1.9-6.4a6.4 6.4 0 0 1 0 8.2"/></svg>
+          <span id="label-sound-toggle">Sound: On</span>
         </button>
       </div>
     </header>
@@ -84,9 +88,10 @@
             <div class="control-group">
               <div class="control-header">
                 <label class="control-label" id="label-pose-count">POSES</label>
-                <span class="control-hint" id="hint-pose-count">4 frames</span>
+                <span class="control-hint tabular" id="hint-pose-count">4 frames</span>
               </div>
-              <div class="segmented-control" role="radiogroup" aria-labelledby="label-pose-count" id="pose-count-group">
+              <div class="segmented-control has-indicator" role="radiogroup" aria-labelledby="label-pose-count" id="pose-count-group">
+                <span class="seg-indicator" aria-hidden="true"></span>
                 <button type="button" class="seg-btn" role="radio" aria-checked="false" data-count="1">1</button>
                 <button type="button" class="seg-btn" role="radio" aria-checked="false" data-count="2">2</button>
                 <button type="button" class="seg-btn" role="radio" aria-checked="false" data-count="3">3</button>
@@ -100,7 +105,8 @@
               <div class="control-header">
                 <label class="control-label" id="label-layout">STRIP LAYOUT</label>
               </div>
-              <div class="layout-grid" role="radiogroup" aria-labelledby="label-layout" id="layout-group">
+              <div class="layout-grid has-indicator" role="radiogroup" aria-labelledby="label-layout" id="layout-group">
+                <span class="layout-indicator" aria-hidden="true"></span>
                 <button type="button" class="layout-btn is-active" role="radio" aria-checked="true" data-layout="single">
                   <span class="layout-glyph layout-glyph-single" aria-hidden="true"></span>
                   <span>Single Strip</span>
@@ -123,7 +129,8 @@
             <div class="control-row-split">
               <div class="control-group">
                 <label class="control-label" id="label-timer">TIMER</label>
-                <div class="segmented-control" role="radiogroup" aria-labelledby="label-timer" id="timer-group">
+                <div class="segmented-control has-indicator" role="radiogroup" aria-labelledby="label-timer" id="timer-group">
+                  <span class="seg-indicator" aria-hidden="true"></span>
                   <button type="button" class="seg-btn is-active" role="radio" aria-checked="true" data-timer="3">3s</button>
                   <button type="button" class="seg-btn" role="radio" aria-checked="false" data-timer="5">5s</button>
                   <button type="button" class="seg-btn" role="radio" aria-checked="false" data-timer="10">10s</button>
@@ -156,17 +163,18 @@
 
             <div class="desktop-start-wrap">
               <button type="button" class="btn btn-primary btn-lg btn-block" id="btn-start-session">
-                Start Session
+                <svg class="icon-line" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2"/></svg>
+                <span>Start Session</span>
               </button>
             </div>
           </div>
 
-          <!-- Active Capture Controls (hidden until capture starts) -->
+          <!-- Active Capture Controls -->
           <div class="capture-panel" id="capture-panel" hidden>
             <div class="control-group">
               <div class="control-header">
                 <span class="control-label">CAPTURE PROGRESS</span>
-                <span class="control-hint" id="capture-status-label">Preparing...</span>
+                <span class="control-hint tabular" id="capture-status-label">Preparing...</span>
               </div>
               <div class="pose-progress-boxes" id="pose-progress-boxes" aria-label="Captured poses"></div>
             </div>
@@ -187,51 +195,79 @@
           </div>
         </section>
 
-        <!-- Right Column (Desktop) / Main Stage (Mobile) -->
-        <section class="booth-stage" aria-label="Camera Preview">
-          <div class="camera-frame-outer">
-            <div class="scalloped-frame">
-              <div class="camera-viewport" id="camera-viewport">
-                <video id="camera-video" autoplay playsinline muted aria-label="Live camera preview"></video>
+        <!-- Right Column (Desktop) / Physical Booth Machine Body -->
+        <section class="booth-stage" aria-label="Photobooth Machine">
+          <div class="booth-machine" id="booth-machine">
+            <!-- Machine Top Bezel: Lens Ring, LED Indicator, Coin Detail -->
+            <div class="machine-top-bezel">
+              <div class="machine-bezel-left">
+                <span class="machine-led" id="booth-led" data-state="idle" aria-hidden="true"></span>
+                <span class="mono-meta" id="booth-led-label">STANDBY</span>
+              </div>
 
-                <!-- Countdown Overlay -->
-                <div class="countdown-overlay" id="countdown-overlay" aria-live="polite" aria-atomic="true">
-                  <span class="countdown-number" id="countdown-number"></span>
-                </div>
+              <div class="machine-lens-ring" aria-hidden="true">
+                <span class="machine-lens-glass"></span>
+              </div>
 
-                <!-- Shutter Flash -->
-                <div class="shutter-flash" id="shutter-flash" aria-hidden="true"></div>
+              <div class="machine-bezel-right" aria-hidden="true">
+                <span class="machine-coin-detail" title="25¢ Analog Studio">25&cent;</span>
+              </div>
+            </div>
 
-                <!-- Single-shot retake banner -->
-                <div class="retake-banner" id="retake-banner" hidden>
-                  RETAKING POSE <span id="retake-pose-num">1</span>
-                </div>
+            <!-- Scalloped Frame & Live Camera Preview -->
+            <div class="camera-frame-outer">
+              <div class="scalloped-frame" id="scalloped-frame">
+                <div class="camera-viewport" id="camera-viewport">
+                  <video id="camera-video" autoplay playsinline muted aria-label="Live camera preview"></video>
 
-                <!-- Camera Loading / Error / Permission Denied State -->
-                <div class="camera-state" id="camera-state" hidden>
-                  <div class="camera-state-card">
-                    <p class="eyebrow" id="camera-state-eyebrow">CAMERA ACCESS</p>
-                    <h2 class="camera-state-title" id="camera-state-title">Waiting for lens...</h2>
-                    <p class="camera-state-desc" id="camera-state-desc">
-                      Allow camera permission in your browser to start shooting.
-                    </p>
-                    <div class="camera-state-actions">
-                      <button type="button" class="btn btn-primary btn-sm" id="btn-retry-camera">
-                        Retry Camera
-                      </button>
-                      <button type="button" class="btn btn-secondary btn-sm" id="btn-demo-frames">
-                        Use Studio Test Frames
-                      </button>
+                  <!-- Brief Polaroid snapshot freeze on shutter -->
+                  <img class="freeze-snapshot" id="freeze-snapshot" alt="" aria-hidden="true" hidden />
+
+                  <!-- Countdown Overlay -->
+                  <div class="countdown-overlay" id="countdown-overlay" aria-live="polite" aria-atomic="true">
+                    <span class="countdown-number tabular" id="countdown-number"></span>
+                  </div>
+
+                  <!-- Shutter Flash -->
+                  <div class="shutter-flash" id="shutter-flash" aria-hidden="true"></div>
+
+                  <!-- Single-shot retake banner -->
+                  <div class="retake-banner" id="retake-banner" hidden>
+                    RETAKING POSE <span id="retake-pose-num">1</span>
+                  </div>
+
+                  <!-- Camera Loading / Error / Permission Denied State -->
+                  <div class="camera-state" id="camera-state" hidden>
+                    <div class="camera-state-card">
+                      <p class="eyebrow" id="camera-state-eyebrow">CAMERA ACCESS</p>
+                      <h2 class="camera-state-title" id="camera-state-title">Waiting for lens...</h2>
+                      <p class="camera-state-desc" id="camera-state-desc">
+                        Allow camera permission in your browser to start shooting.
+                      </p>
+                      <div class="camera-state-actions">
+                        <button type="button" class="btn btn-primary btn-sm" id="btn-retry-camera">
+                          Retry Camera
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btn-demo-frames">
+                          Use Studio Test Frames
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+
+              <div class="camera-caption-bar">
+                <span class="mono-meta tabular" id="camera-counter">0 / 4</span>
+                <span class="mono-meta">MISTLETOE &middot; 1280&times;960</span>
+                <span class="mono-meta" id="camera-filter-badge">B&amp;W</span>
+              </div>
             </div>
 
-            <div class="camera-caption-bar">
-              <span class="mono-meta" id="camera-counter">0 / 4</span>
-              <span class="mono-meta">MISTLETOE STUDIO &middot; 1280&times;960</span>
-              <span class="mono-meta" id="camera-filter-badge">B&amp;W</span>
+            <!-- Front Printer Slot Detail on Machine -->
+            <div class="machine-front-slot" aria-hidden="true">
+              <span class="machine-slot-label">PRINT CHUTE</span>
+              <div class="machine-slot-opening"></div>
             </div>
           </div>
         </section>
@@ -240,46 +276,66 @@
       <!-- Mobile Sticky Bottom Bar + Settings Sheet Trigger -->
       <div class="mobile-bottom-bar" id="mobile-bottom-bar">
         <button type="button" class="btn btn-secondary" id="btn-mobile-settings" aria-expanded="false" aria-controls="mobile-sheet-backdrop">
-          Settings
+          <svg class="icon-line" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4.5h12M2 8h12M2 11.5h12"/><circle cx="5.5" cy="4.5" r="1.4" fill="currentColor"/><circle cx="10.5" cy="8" r="1.4" fill="currentColor"/><circle cx="6.5" cy="11.5" r="1.4" fill="currentColor"/></svg>
+          <span>Settings</span>
         </button>
         <button type="button" class="btn btn-primary btn-lg mobile-start-btn" id="btn-mobile-start">
           Start Session
         </button>
       </div>
 
-      <!-- Mobile Bottom Sheet Backdrop -->
+      <!-- Mobile Bottom Sheet Backdrop (supports drag handle & snap points) -->
       <div class="mobile-sheet-backdrop" id="mobile-sheet-backdrop" hidden>
-        <div class="mobile-sheet" id="mobile-sheet" role="dialog" aria-modal="true" aria-label="Booth Settings">
-          <div class="mobile-sheet-handle" aria-hidden="true"></div>
+        <div class="mobile-sheet" id="mobile-sheet" role="dialog" aria-modal="true" aria-label="Booth Settings" data-snap="half">
+          <div class="mobile-sheet-handle-area" id="mobile-sheet-handle" aria-label="Drag to resize sheet">
+            <div class="mobile-sheet-handle"></div>
+          </div>
           <div class="mobile-sheet-header">
             <span class="control-label">SESSION SETTINGS</span>
             <button type="button" class="btn btn-ghost btn-sm" id="btn-close-sheet">Done</button>
           </div>
-          <div class="mobile-sheet-body" id="mobile-sheet-body">
-            <!-- Setup panel moves here on mobile <768px via CSS/JS -->
-          </div>
+          <div class="mobile-sheet-body" id="mobile-sheet-body"></div>
         </div>
       </div>
     </main>
 
-    <!-- SCREEN 3: PRINTING ANIMATION -->
+    <!-- SCREEN 3: CINEMATIC PRINTING SEQUENCE -->
     <section class="view view-printing" id="view-printing" hidden aria-label="Printing Photo Strip">
       <div class="printer-stage">
-        <div class="printer-housing">
+        <div class="printer-machine" id="printer-machine">
           <div class="printer-header">
-            <span class="eyebrow">ANALOG THERMAL PRINT</span>
-            <span class="printer-led" aria-hidden="true"></span>
+            <div class="printer-header-left">
+              <span class="machine-led" id="printer-led" data-state="printing" aria-hidden="true"></span>
+              <span class="eyebrow" id="printing-status" aria-live="polite">DEVELOPING...</span>
+            </div>
+            <div class="printer-header-right">
+              <div class="machine-lens-ring small" aria-hidden="true">
+                <span class="machine-lens-glass"></span>
+              </div>
+              <button type="button" class="btn-link-skip" id="btn-skip-print">Skip</button>
+            </div>
           </div>
-          <div class="printer-slot">
-            <div class="printer-slit" aria-hidden="true"></div>
+
+          <!-- Printer Slot Lip (layered ABOVE emerging strip) -->
+          <div class="printer-slot-assembly">
+            <div class="printer-slot-lip">
+              <div class="printer-slit"></div>
+              <div class="printer-slot-glow" id="printer-slot-glow" aria-hidden="true"></div>
+            </div>
+
+            <!-- Overflow-hidden chute masking strip inside the machine -->
             <div class="printed-strip-chute" id="printed-strip-chute">
-              <img id="printing-preview-img" alt="Printing photo strip" />
+              <div class="light-sweep" id="light-sweep" aria-hidden="true"></div>
+              <div class="dust-layer" id="dust-layer" aria-hidden="true"></div>
+              <div class="printed-strip-card" id="printed-strip-card">
+                <canvas id="printing-canvas" aria-label="Developing photo strip"></canvas>
+                <div class="developing-veil-layer" id="developing-veil-layer" aria-hidden="true"></div>
+              </div>
             </div>
           </div>
         </div>
-        <p class="printing-status" id="printing-status" aria-live="polite">
-          Developing &amp; printing your strip...
-        </p>
+
+        <p class="printing-caption" id="printing-caption" aria-live="polite"></p>
       </div>
     </section>
 
@@ -291,12 +347,16 @@
           <div class="strip-stage" id="strip-stage">
             <div class="strip-paper-wrap" id="strip-paper-wrap">
               <canvas id="strip-canvas" aria-label="Edited photo strip preview"></canvas>
-              <!-- Interactive overlay for stickers, text, drawing, and per-photo tap selection -->
               <div class="strip-overlay" id="strip-overlay"></div>
             </div>
           </div>
 
-          <!-- Contextual Selection Bar (for active sticker/text or active photo) -->
+          <button type="button" class="btn-link-subtle" id="btn-replay-print">
+            <svg class="icon-line" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 1 1.6 3.9M2.5 12V8.5H6"/></svg>
+            <span>Replay print animation</span>
+          </button>
+
+          <!-- Contextual Selection Bar -->
           <div class="selection-bar" id="selection-bar" hidden>
             <div class="selection-bar-info" id="selection-bar-info">Item selected</div>
             <div class="selection-bar-actions" id="selection-bar-actions"></div>
@@ -308,9 +368,13 @@
               Take Again
             </button>
             <div class="export-primary-group">
+              <button type="button" class="btn btn-ghost btn-sm mobile-only-edit-btn" id="btn-focus-editor">
+                Edit
+              </button>
               <div class="dropdown-wrap">
                 <button type="button" class="btn btn-primary" id="btn-download-menu" aria-expanded="false" aria-haspopup="true">
-                  Download
+                  <svg class="icon-line" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8m0 0L5 7.5m3 3l3-3M3 13.5h10"/></svg>
+                  <span>Download</span>
                 </button>
                 <div class="dropdown-menu" id="download-menu" role="menu" hidden>
                   <button type="button" class="dropdown-item" role="menuitem" id="btn-dl-png">
@@ -333,7 +397,8 @@
               </div>
 
               <button type="button" class="btn btn-accent" id="btn-share-native">
-                Share
+                <svg class="icon-line" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10.5V2.5m0 0L5 5.5m3-3l3 3M3.5 9.5v4h9v-4"/></svg>
+                <span>Share</span>
               </button>
             </div>
           </div>
@@ -353,7 +418,7 @@
         </div>
 
         <!-- Editor Tools Panel (Left on Desktop, Bottom Tray on Mobile) -->
-        <aside class="editor-tools-col" aria-label="Editing Tools">
+        <aside class="editor-tools-col" id="editor-tools-col" aria-label="Editing Tools">
           <div class="editor-tabs" role="tablist" aria-label="Editor categories" id="editor-tabs">
             <button type="button" class="tab-btn is-active" role="tab" aria-selected="true" data-tab="filters">Filters</button>
             <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="adjust">Adjust</button>
@@ -396,14 +461,14 @@
                 <div class="slider-item">
                   <div class="slider-header">
                     <label for="slider-border">BORDER</label>
-                    <span class="mono-meta" id="val-border">18px</span>
+                    <span class="mono-meta tabular" id="val-border">18px</span>
                   </div>
                   <input type="range" id="slider-border" min="8" max="40" value="18" />
                 </div>
                 <div class="slider-item">
                   <div class="slider-header">
                     <label for="slider-radius">CORNERS</label>
-                    <span class="mono-meta" id="val-radius">2px</span>
+                    <span class="mono-meta tabular" id="val-radius">2px</span>
                   </div>
                   <input type="range" id="slider-radius" min="0" max="24" value="2" />
                 </div>
@@ -454,7 +519,7 @@
                   <div class="slider-item">
                     <div class="slider-header">
                       <label for="slider-pen-size">SIZE</label>
-                      <span class="mono-meta" id="val-pen-size">4px</span>
+                      <span class="mono-meta tabular" id="val-pen-size">4px</span>
                     </div>
                     <input type="range" id="slider-pen-size" min="2" max="24" value="4" />
                   </div>
@@ -507,7 +572,7 @@
                 <div class="slider-item">
                   <div class="slider-header">
                     <label for="slider-photo-zoom">CROP / ZOOM</label>
-                    <span class="mono-meta" id="val-photo-zoom">1.00&times;</span>
+                    <span class="mono-meta tabular" id="val-photo-zoom">1.00&times;</span>
                   </div>
                   <input type="range" id="slider-photo-zoom" min="100" max="200" value="100" />
                 </div>
@@ -546,4 +611,3 @@
   <script type="module" src="./js/ui.js"></script>
 </body>
 </html>
-

@@ -1,6 +1,8 @@
 /**
- * Main UI controller: wires screens, setup controls, capture loop,
- * printing reveal, editor tabs, keyboard shortcuts, and PWA registration.
+ * Main UI controller: wires screens with View Transitions API,
+ * physical machine LED & lens states, sliding pill indicators,
+ * capture loop with Polaroid freeze-snapshot, cinematic print sequence,
+ * editor tabs with stagger, mobile sheet snap points, and PWA registration.
  */
 
 import {
@@ -19,15 +21,20 @@ import {
   DEFAULT_ADJUSTMENTS,
 } from './state.js';
 import {
+  isSoundEnabled,
+  setSoundEnabled,
+  ensureAudioContext,
+  playCountdownTick,
+  playShutterThunk,
+} from './audio.js';
+import {
   startCamera,
   stopCamera,
   hasActiveCamera,
   captureVideoFrame,
   generateStudioTestFrame,
-  playBeep,
-  playShutterSound,
-  playPrinterSound,
 } from './camera.js';
+import { playPrintSequence } from './print-animation.js';
 import { FILTERS, getFilterById } from './filters.js';
 import { STICKER_CATEGORIES, STICKERS } from './stickers.js';
 import {
@@ -46,7 +53,6 @@ import {
   shareInstagram,
   exportStripBlob,
 } from './share.js';
-import { renderStripToCanvas } from './renderer.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -59,13 +65,19 @@ const els = {
   btnRedo: $('btn-redo'),
   btnResetEdits: $('btn-reset-edits'),
   btnSoundToggle: $('btn-sound-toggle'),
+  labelSoundToggle: $('label-sound-toggle'),
 
   // Setup & Capture
   setupHeadline: $('setup-headline'),
   setupPanel: $('setup-panel'),
   capturePanel: $('capture-panel'),
   boothSidebar: document.querySelector('.booth-sidebar'),
+  boothMachine: $('booth-machine'),
+  boothLed: $('booth-led'),
+  boothLedLabel: $('booth-led-label'),
   mobileSheetBackdrop: $('mobile-sheet-backdrop'),
+  mobileSheet: $('mobile-sheet'),
+  mobileSheetHandle: $('mobile-sheet-handle'),
   mobileSheetBody: $('mobile-sheet-body'),
   btnMobileSettings: $('btn-mobile-settings'),
   btnCloseSheet: $('btn-close-sheet'),
@@ -81,6 +93,7 @@ const els = {
   btnMirrorToggle: $('btn-mirror-toggle'),
 
   cameraVideo: $('camera-video'),
+  freezeSnapshot: $('freeze-snapshot'),
   cameraState: $('camera-state'),
   cameraStateEyebrow: $('camera-state-eyebrow'),
   cameraStateTitle: $('camera-state-title'),
@@ -102,10 +115,20 @@ const els = {
   btnCancelCapture: $('btn-cancel-capture'),
 
   // Printing
-  printedStripChute: $('printed-strip-chute'),
-  printingPreviewImg: $('printing-preview-img'),
+  printerMachine: $('printer-machine'),
+  printerLed: $('printer-led'),
+  printerSlotGlow: $('printer-slot-glow'),
+  printingStatus: $('printing-status'),
+  printingCaption: $('printing-caption'),
+  printedStripCard: $('printed-strip-card'),
+  printingCanvas: $('printing-canvas'),
+  developingVeilLayer: $('developing-veil-layer'),
+  lightSweep: $('light-sweep'),
+  dustLayer: $('dust-layer'),
+  btnSkipPrint: $('btn-skip-print'),
 
   // Editor
+  editorToolsCol: $('editor-tools-col'),
   stripCanvas: $('strip-canvas'),
   stripOverlay: $('strip-overlay'),
   selectionBar: $('selection-bar'),
@@ -147,6 +170,8 @@ const els = {
   btnDeselectPhoto: $('btn-deselect-photo'),
 
   // Export & Modals
+  btnReplayPrint: $('btn-replay-print'),
+  btnFocusEditor: $('btn-focus-editor'),
   btnTakeAgain: $('btn-take-again'),
   btnDownloadMenu: $('btn-download-menu'),
   downloadMenu: $('download-menu'),
@@ -177,8 +202,9 @@ let captureController = {
 
 let activeStickerCat = STICKER_CATEGORIES[0].id;
 let activeTextFont = 'sans';
+let lastStampedIndex = -1;
 
-/* ---------- Toast & Modal Helpers ---------- */
+/* ---------- Helpers ---------- */
 function showToast(message) {
   const el = document.createElement('div');
   el.className = 'toast';
@@ -198,8 +224,56 @@ function closeModal() {
   els.modalBackdrop.hidden = true;
 }
 
-/* ---------- Screen Switching ---------- */
-function setScreen(screen) {
+function triggerHaptic(ms = 22) {
+  if (navigator.vibrate) {
+    navigator.vibrate(ms);
+  }
+}
+
+function setBoothLed(ledState, labelText) {
+  els.boothLed.dataset.state = ledState;
+  els.boothLedLabel.textContent = labelText;
+}
+
+function syncSoundUI() {
+  const on = isSoundEnabled();
+  state.session.soundEnabled = on;
+  els.labelSoundToggle.textContent = `Sound: ${on ? 'On' : 'Off'}`;
+  els.btnSoundToggle.setAttribute('aria-pressed', String(!on));
+}
+
+/* ---------- Sliding Pill Indicators ---------- */
+function positionSlidingIndicator(container, activeSelector, indicatorSelector) {
+  if (!container) return;
+  const indicator = container.querySelector(indicatorSelector);
+  const active = container.querySelector(activeSelector);
+  if (!indicator || !active) return;
+
+  const cRect = container.getBoundingClientRect();
+  const aRect = active.getBoundingClientRect();
+  if (aRect.width === 0) return;
+
+  if (indicatorSelector === '.seg-indicator') {
+    const left = active.offsetLeft - 3;
+    indicator.style.width = `${aRect.width}px`;
+    indicator.style.transform = `translateX(${left}px)`;
+  } else {
+    indicator.style.width = `${aRect.width}px`;
+    indicator.style.height = `${aRect.height}px`;
+    indicator.style.transform = `translate(${aRect.left - cRect.left}px, ${aRect.top - cRect.top}px)`;
+  }
+}
+
+function syncAllIndicators() {
+  requestAnimationFrame(() => {
+    positionSlidingIndicator(els.poseCountGroup, '.seg-btn.is-active', '.seg-indicator');
+    positionSlidingIndicator(els.timerGroup, '.seg-btn.is-active', '.seg-indicator');
+    positionSlidingIndicator(els.layoutGroup, '.layout-btn.is-active', '.layout-indicator');
+  });
+}
+
+/* ---------- Screen Switching (View Transitions API + fallback) ---------- */
+function applyScreenDOM(screen) {
   state.screen = screen;
   els.viewBooth.hidden = screen !== 'booth';
   els.viewPrinting.hidden = screen !== 'printing';
@@ -207,14 +281,30 @@ function setScreen(screen) {
   els.headerHistory.hidden = screen !== 'editor';
 
   if (screen === 'editor') {
+    els.viewEditor.classList.remove('is-entering');
+    void els.viewEditor.offsetWidth;
+    els.viewEditor.classList.add('is-entering');
     scheduleRender();
     syncEditorControls();
+  }
+}
+
+async function setScreen(screen) {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduced && typeof document.startViewTransition === 'function') {
+    const transition = document.startViewTransition(() => {
+      applyScreenDOM(screen);
+    });
+    await transition.finished.catch(() => {});
+  } else {
+    applyScreenDOM(screen);
   }
 }
 
 /* ---------- Camera Lifecycle ---------- */
 async function initCameraStream() {
   captureController.useDemoMode = false;
+  setBoothLed('idle', 'CONNECTING');
   els.cameraState.hidden = false;
   els.cameraStateEyebrow.textContent = 'CAMERA ACCESS';
   els.cameraStateTitle.textContent = 'Connecting lens...';
@@ -223,8 +313,10 @@ async function initCameraStream() {
   try {
     await startCamera(els.cameraVideo, state.session.facingMode);
     els.cameraState.hidden = true;
+    setBoothLed('idle', 'STANDBY');
     applyLiveVideoPreviewStyle();
   } catch (err) {
+    setBoothLed('idle', 'OFFLINE');
     els.cameraState.hidden = false;
     if (err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
       els.cameraStateEyebrow.textContent = 'PERMISSION DENIED';
@@ -288,9 +380,10 @@ function syncSetupUI() {
   els.btnMirrorToggle.setAttribute('aria-pressed', String(mirrored));
 
   applyLiveVideoPreviewStyle();
+  syncAllIndicators();
 }
 
-/* ---------- Mobile Bottom Sheet Placement ---------- */
+/* ---------- Mobile Bottom Sheet Placement & Snap Points ---------- */
 function syncResponsiveSetupPlacement() {
   const isMobile = window.innerWidth < 768;
   if (isMobile) {
@@ -303,6 +396,33 @@ function syncResponsiveSetupPlacement() {
       els.boothSidebar.appendChild(els.setupPanel);
     }
   }
+  syncAllIndicators();
+}
+
+function setupMobileSheetDrag() {
+  let startY = 0;
+  let dragging = false;
+
+  els.mobileSheetHandle.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    startY = e.clientY;
+    els.mobileSheetHandle.setPointerCapture?.(e.pointerId);
+  });
+
+  els.mobileSheetHandle.addEventListener('pointerup', (e) => {
+    if (!dragging) return;
+    dragging = false;
+    const dy = e.clientY - startY;
+    if (dy < -36) {
+      els.mobileSheet.dataset.snap = 'full';
+    } else if (dy > 90 && els.mobileSheet.dataset.snap === 'half') {
+      els.mobileSheetBackdrop.hidden = true;
+      els.btnMobileSettings.setAttribute('aria-expanded', 'false');
+    } else if (dy > 36) {
+      els.mobileSheet.dataset.snap = 'half';
+    }
+    syncAllIndicators();
+  });
 }
 
 /* ---------- Capture Sequence ---------- */
@@ -315,6 +435,9 @@ function renderProgressBoxes(currentIndex) {
     const cap = state.captures[i];
     if (cap && cap.thumbUrl) {
       box.classList.add('is-done');
+      if (i === lastStampedIndex) {
+        box.classList.add('is-stamped');
+      }
       const img = document.createElement('img');
       img.src = cap.thumbUrl;
       img.alt = `Pose ${i + 1}`;
@@ -335,12 +458,26 @@ function triggerFlash() {
   els.shutterFlash.classList.add('is-flashing');
 }
 
+async function showFreezeSnapshot(thumbUrl) {
+  if (!thumbUrl) return;
+  els.freezeSnapshot.src = thumbUrl;
+  els.freezeSnapshot.hidden = false;
+  els.freezeSnapshot.classList.remove('is-shrinking');
+  await new Promise((r) => setTimeout(r, 240));
+  els.freezeSnapshot.classList.add('is-shrinking');
+  await new Promise((r) => setTimeout(r, 360));
+  els.freezeSnapshot.hidden = true;
+  els.freezeSnapshot.classList.remove('is-shrinking');
+}
+
 function showCountdownTick(num) {
+  const isFinal = num === 1;
   els.countdownNumber.textContent = String(num);
   els.countdownNumber.classList.remove('is-visible');
   void els.countdownNumber.offsetWidth;
   els.countdownNumber.classList.add('is-visible');
-  if (state.session.soundEnabled) playBeep(num === 1 ? 880 : 620, 0.07, 0.05);
+  els.boothMachine.classList.toggle('is-final-second', isFinal);
+  playCountdownTick(isFinal);
 }
 
 async function waitSecondWithPause() {
@@ -370,19 +507,27 @@ async function runCountdownAndSnap(poseIndex, total) {
     if (!ok) return null;
   }
 
+  els.boothMachine.classList.remove('is-final-second');
   els.countdownNumber.textContent = '';
   triggerFlash();
-  if (state.session.soundEnabled) playShutterSound();
+  playShutterThunk();
+  triggerHaptic(28);
 
   const shouldMirror = state.session.mirrored && state.session.facingMode === 'user';
-  if (captureController.useDemoMode || !hasActiveCamera()) {
-    return generateStudioTestFrame(poseIndex, total);
-  }
-  return captureVideoFrame(els.cameraVideo, shouldMirror);
+  const shot = (captureController.useDemoMode || !hasActiveCamera())
+    ? await generateStudioTestFrame(poseIndex, total)
+    : await captureVideoFrame(els.cameraVideo, shouldMirror);
+
+  await showFreezeSnapshot(shot.thumbUrl);
+  return shot;
 }
 
 async function startCaptureSession(singleRetakeIndex = null) {
+  ensureAudioContext();
+  triggerHaptic(18);
   els.mobileSheetBackdrop.hidden = true;
+  setBoothLed('shooting', 'SHOOTING');
+
   captureController = {
     running: true,
     paused: false,
@@ -395,6 +540,7 @@ async function startCaptureSession(singleRetakeIndex = null) {
   els.capturePanel.hidden = false;
   els.btnMobileStart.disabled = true;
   els.btnPauseCapture.textContent = 'Pause';
+  lastStampedIndex = -1;
 
   if (singleRetakeIndex !== null) {
     els.retakeBanner.hidden = false;
@@ -405,6 +551,7 @@ async function startCaptureSession(singleRetakeIndex = null) {
       const old = state.captures[singleRetakeIndex];
       if (old?.bitmap?.close) old.bitmap.close();
       state.captures[singleRetakeIndex] = { id: `cap_${Date.now()}`, ...shot };
+      lastStampedIndex = singleRetakeIndex;
       finishCaptureToEditor();
     }
     return;
@@ -423,9 +570,10 @@ async function startCaptureSession(singleRetakeIndex = null) {
     const shot = await runCountdownAndSnap(idx, total);
     if (!shot || captureController.cancelled) break;
     state.captures.push({ id: `cap_${Date.now()}_${idx}`, ...shot });
+    lastStampedIndex = state.captures.length - 1;
     renderProgressBoxes(state.captures.length);
     if (state.captures.length < total) {
-      await new Promise((r) => setTimeout(r, 420));
+      await new Promise((r) => setTimeout(r, 340));
     }
   }
 
@@ -433,6 +581,7 @@ async function startCaptureSession(singleRetakeIndex = null) {
   els.btnMobileStart.disabled = false;
 
   if (captureController.cancelled) {
+    setBoothLed('idle', 'STANDBY');
     els.setupPanel.hidden = false;
     els.capturePanel.hidden = true;
     clearCaptures();
@@ -445,37 +594,37 @@ async function startCaptureSession(singleRetakeIndex = null) {
 
 async function runPrintingSequence() {
   stopCamera();
-  setScreen('printing');
+  setBoothLed('printing', 'PRINTING');
+  await setScreen('printing');
 
-  const tempCanvas = document.createElement('canvas');
-  await renderStripToCanvas(tempCanvas, state, 1);
-  els.printingPreviewImg.src = tempCanvas.toDataURL('image/png');
-  els.printedStripChute.classList.remove('is-printing');
-
-  if (state.session.soundEnabled) playPrinterSound();
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      els.printedStripChute.classList.add('is-printing');
-    });
+  await playPrintSequence(state, {
+    printerMachine: els.printerMachine,
+    printerLed: els.printerLed,
+    printerSlotGlow: els.printerSlotGlow,
+    printingStatus: els.printingStatus,
+    printingCaption: els.printingCaption,
+    printedStripCard: els.printedStripCard,
+    printingCanvas: els.printingCanvas,
+    developingVeilLayer: els.developingVeilLayer,
+    lightSweep: els.lightSweep,
+    dustLayer: els.dustLayer,
+    btnSkipPrint: els.btnSkipPrint,
   });
 
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  await new Promise((r) => setTimeout(r, reduced ? 200 : 2300));
-  finishCaptureToEditor();
+  await finishCaptureToEditor();
 }
 
-function finishCaptureToEditor() {
+async function finishCaptureToEditor() {
   els.setupPanel.hidden = false;
   els.capturePanel.hidden = true;
   els.btnMobileStart.disabled = false;
+  setBoothLed('ready', 'READY');
   stopCamera();
-  setScreen('editor');
+  await setScreen('editor');
 }
 
 /* ---------- Editor Controls Construction & Sync ---------- */
 function buildEditorControls() {
-  // 1. Filters grid
   els.editorFilterGrid.innerHTML = '';
   for (const f of FILTERS) {
     const btn = document.createElement('button');
@@ -492,7 +641,6 @@ function buildEditorControls() {
     els.editorFilterGrid.appendChild(btn);
   }
 
-  // 2. Adjustment sliders
   const sliderSpecs = [
     { key: 'brightness', label: 'Brightness', min: -50, max: 50 },
     { key: 'contrast', label: 'Contrast', min: -50, max: 50 },
@@ -511,12 +659,12 @@ function buildEditorControls() {
     wrap.innerHTML = `
       <div class="slider-header">
         <label for="adj-${spec.key}">${spec.label}</label>
-        <span class="mono-meta" id="val-adj-${spec.key}">${state.edits.adjustments[spec.key]}</span>
+        <span class="mono-meta tabular" id="val-adj-${spec.key}">${state.edits.adjustments[spec.key]}</span>
       </div>
       <input type="range" id="adj-${spec.key}" min="${spec.min}" max="${spec.max}" value="${state.edits.adjustments[spec.key]}" />
     `;
     const input = wrap.querySelector('input');
-    input.addEventListener('pointerdown', () => pushHistory(), { once: false });
+    input.addEventListener('pointerdown', () => pushHistory());
     input.addEventListener('input', (e) => {
       const val = Number(e.target.value);
       state.edits.adjustments[spec.key] = val;
@@ -526,7 +674,6 @@ function buildEditorControls() {
     els.adjustSliders.appendChild(wrap);
   }
 
-  // 3. Paper swatches + custom color
   els.paperSwatches.innerHTML = '';
   for (const sw of PAPER_SWATCHES) {
     const btn = document.createElement('button');
@@ -556,7 +703,6 @@ function buildEditorControls() {
   });
   els.paperSwatches.appendChild(customColor);
 
-  // 4. Sticker categories & grid
   els.stickerCatTabs.innerHTML = '';
   for (const cat of STICKER_CATEGORIES) {
     const btn = document.createElement('button');
@@ -572,7 +718,6 @@ function buildEditorControls() {
   }
   renderStickerCategory();
 
-  // 5. Pen colors
   els.penColors.innerHTML = '';
   for (const col of PEN_COLORS) {
     const btn = document.createElement('button');
@@ -589,7 +734,6 @@ function buildEditorControls() {
     els.penColors.appendChild(btn);
   }
 
-  // 6. Per-photo filters
   els.perPhotoFilters.innerHTML = '';
   const inheritBtn = document.createElement('button');
   inheritBtn.type = 'button';
@@ -641,16 +785,13 @@ function setPerPhotoFilter(filterId) {
 function syncEditorControls() {
   const { edits, drawTool, selection } = state;
 
-  // Undo/Redo
   els.btnUndo.disabled = !canUndo();
   els.btnRedo.disabled = !canRedo();
 
-  // Filter cards
   for (const btn of els.editorFilterGrid.querySelectorAll('.filter-card')) {
     btn.classList.toggle('is-active', btn.dataset.filter === edits.filter);
   }
 
-  // Adjustment sliders
   for (const key of Object.keys(DEFAULT_ADJUSTMENTS)) {
     const input = $(`adj-${key}`);
     const valEl = $(`val-adj-${key}`);
@@ -660,7 +801,6 @@ function syncEditorControls() {
     }
   }
 
-  // Frame
   for (const btn of els.editorLayoutGroup.querySelectorAll('.layout-btn')) {
     btn.classList.toggle('is-active', btn.dataset.layout === edits.frame.layout);
   }
@@ -681,7 +821,6 @@ function syncEditorControls() {
   els.btnBrandingLine.classList.toggle('is-active', edits.frame.showBranding);
   els.btnBrandingLine.textContent = `Studio Mark: ${edits.frame.showBranding ? 'On' : 'Off'}`;
 
-  // Draw tools
   els.btnDrawMode.classList.toggle('is-active', drawTool.active);
   els.btnDrawMode.textContent = `Pen: ${drawTool.active ? 'On' : 'Off'}`;
   els.btnDrawMode.setAttribute('aria-pressed', String(drawTool.active));
@@ -691,7 +830,6 @@ function syncEditorControls() {
     btn.classList.toggle('is-active', btn.dataset.penColor === drawTool.color);
   }
 
-  // Per-photo panel
   const hasPhoto = selection.type === 'photo';
   els.perPhotoEmpty.hidden = hasPhoto;
   els.perPhotoControls.hidden = !hasPhoto;
@@ -729,14 +867,11 @@ function bindEvents() {
     if (state.screen === 'editor') scheduleRender();
   });
 
-  // Sound toggle
   els.btnSoundToggle.addEventListener('click', () => {
-    state.session.soundEnabled = !state.session.soundEnabled;
-    els.btnSoundToggle.textContent = `Sound: ${state.session.soundEnabled ? 'On' : 'Off'}`;
-    els.btnSoundToggle.setAttribute('aria-pressed', String(!state.session.soundEnabled));
+    setSoundEnabled(!isSoundEnabled());
+    syncSoundUI();
   });
 
-  // Setup controls
   els.poseCountGroup.addEventListener('click', (e) => {
     const btn = e.target.closest('.seg-btn');
     if (!btn) return;
@@ -776,30 +911,33 @@ function bindEvents() {
     syncSetupUI();
   });
 
-  // Mobile sheet
   els.btnMobileSettings.addEventListener('click', () => {
+    els.mobileSheet.dataset.snap = 'half';
     els.mobileSheetBackdrop.hidden = false;
     els.btnMobileSettings.setAttribute('aria-expanded', 'true');
+    syncAllIndicators();
   });
+
   els.btnCloseSheet.addEventListener('click', () => {
     els.mobileSheetBackdrop.hidden = true;
     els.btnMobileSettings.setAttribute('aria-expanded', 'false');
   });
+
   els.mobileSheetBackdrop.addEventListener('click', (e) => {
     if (e.target === els.mobileSheetBackdrop) {
       els.mobileSheetBackdrop.hidden = true;
+      els.btnMobileSettings.setAttribute('aria-expanded', 'false');
     }
   });
 
-  // Camera error state buttons
   els.btnRetryCamera.addEventListener('click', () => initCameraStream());
   els.btnDemoFrames.addEventListener('click', () => {
     captureController.useDemoMode = true;
     els.cameraState.hidden = true;
+    setBoothLed('idle', 'TEST MODE');
     showToast('Studio test frames ready. Press Start Session.');
   });
 
-  // Start / Capture controls
   els.btnStartSession.addEventListener('click', () => startCaptureSession(null));
   els.btnMobileStart.addEventListener('click', () => startCaptureSession(null));
 
@@ -822,14 +960,12 @@ function bindEvents() {
     captureController.cancelled = true;
   });
 
-  // Editor Tabs
   els.editorTabs.addEventListener('click', (e) => {
     const btn = e.target.closest('.tab-btn');
     if (!btn) return;
     switchEditorTab(btn.dataset.tab);
   });
 
-  // Frame controls
   els.editorLayoutGroup.addEventListener('click', (e) => {
     const btn = e.target.closest('.layout-btn');
     if (!btn) return;
@@ -879,7 +1015,6 @@ function bindEvents() {
     scheduleRender();
   });
 
-  // Draw & Text
   els.btnDrawMode.addEventListener('click', () => {
     state.drawTool.active = !state.drawTool.active;
     syncEditorControls();
@@ -920,7 +1055,6 @@ function bindEvents() {
     els.inputOverlayText.value = '';
   });
 
-  // Per-photo controls
   els.sliderPhotoZoom.addEventListener('input', (e) => {
     if (state.selection.type !== 'photo') return;
     const idx = state.selection.id;
@@ -943,7 +1077,7 @@ function bindEvents() {
   els.btnRetakeSingle.addEventListener('click', async () => {
     if (state.selection.type !== 'photo') return;
     const idx = state.selection.id;
-    setScreen('booth');
+    await setScreen('booth');
     await initCameraStream();
     startCaptureSession(idx);
   });
@@ -954,19 +1088,12 @@ function bindEvents() {
     scheduleRender();
   });
 
-  // History & Reset
   els.btnUndo.addEventListener('click', () => {
-    if (undo()) {
-      syncEditorControls();
-      scheduleRender();
-    }
+    if (undo()) { syncEditorControls(); scheduleRender(); }
   });
 
   els.btnRedo.addEventListener('click', () => {
-    if (redo()) {
-      syncEditorControls();
-      scheduleRender();
-    }
+    if (redo()) { syncEditorControls(); scheduleRender(); }
   });
 
   els.btnResetEdits.addEventListener('click', () => {
@@ -976,7 +1103,6 @@ function bindEvents() {
     showToast('Edits reset to studio default.');
   });
 
-  // Keyboard shortcuts
   window.addEventListener('keydown', (e) => {
     if (state.screen !== 'editor') return;
     const mod = e.ctrlKey || e.metaKey;
@@ -990,10 +1116,20 @@ function bindEvents() {
     }
   });
 
-  // Export & Share
+  // Replay print animation
+  els.btnReplayPrint.addEventListener('click', async () => {
+    ensureAudioContext();
+    await runPrintingSequence();
+  });
+
+  // Mobile Edit scroll focus
+  els.btnFocusEditor.addEventListener('click', () => {
+    els.editorToolsCol.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
   els.btnTakeAgain.addEventListener('click', async () => {
     clearCaptures();
-    setScreen('booth');
+    await setScreen('booth');
     syncSetupUI();
     await initCameraStream();
   });
@@ -1108,7 +1244,7 @@ async function bootstrap() {
         syncEditorControls();
       },
       onRetakeSingle: async (idx) => {
-        setScreen('booth');
+        await setScreen('booth');
         await initCameraStream();
         startCaptureSession(idx);
       },
@@ -1121,17 +1257,17 @@ async function bootstrap() {
     }
   });
 
+  syncSoundUI();
   buildEditorControls();
   syncResponsiveSetupPlacement();
+  setupMobileSheetDrag();
   syncSetupUI();
   bindEvents();
   await initCameraStream();
 
-  // Register offline Service Worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 }
 
 bootstrap();
-
