@@ -1200,12 +1200,13 @@ function bindEvents() {
     setTimeout(() => els.charGrinch.classList.remove('is-smirking'), 500);
   });
 
-  // Subtle parallax for Grinch & Spider-Man on desktop mouse move
+  // Subtle parallax for Grinch on desktop mouse move (applied to inner img so float stays smooth)
   if (window.matchMedia('(hover: hover)').matches) {
     window.addEventListener('mousemove', (e) => {
-      const nx = (e.clientX / window.innerWidth - 0.5) * 10;
-      const ny = (e.clientY / window.innerHeight - 0.5) * 8;
-      if (els.charGrinch) els.charGrinch.style.transform = `translate(${nx.toFixed(1)}px, ${ny.toFixed(1)}px)`;
+      const nx = (e.clientX / window.innerWidth - 0.5) * 8;
+      const ny = (e.clientY / window.innerHeight - 0.5) * 6;
+      const img = els.charGrinch?.querySelector('img');
+      if (img) img.style.transform = `translate(${nx.toFixed(1)}px, ${ny.toFixed(1)}px)`;
     });
   }
 

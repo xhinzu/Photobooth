@@ -1019,37 +1019,47 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
 }
 
 /* Grinch & Spider-Man Character Layers */
-.char-layer {
-  position: relative;
-}
-
-.char-grinch-setup,
-.char-spidey-setup {
-  position: fixed;
-  z-index: 25;
+.char-grinch-machine {
+  position: absolute;
+  left: -56px;
+  top: -28px;
+  width: clamp(92px, 11vw, 148px);
+  z-index: 42;
   pointer-events: auto;
   user-select: none;
-}
-
-.char-grinch-setup {
-  left: -10px;
-  top: 118px;
-  width: clamp(110px, 14vw, 185px);
-  animation: grinchFloat 4.8s ease-in-out infinite;
   cursor: pointer;
+  animation: grinchFloat 4.8s ease-in-out infinite;
 }
 
-.char-grinch-setup img {
+.char-grinch-machine img {
   width: 100%;
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 12px rgba(23, 163, 90, 0.45));
+  display: block;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 14px rgba(23, 163, 90, 0.55));
   transition: transform 260ms var(--ease-spring);
 }
 
-.char-grinch-setup:hover img,
-.char-grinch-setup.is-smirking img {
-  transform: rotate(7deg) scale(1.05);
+.char-grinch-machine:hover img,
+.char-grinch-machine.is-smirking img {
+  transform: rotate(7deg) scale(1.06);
+}
+
+.char-grinch-strip {
+  position: absolute;
+  left: 6%;
+  bottom: 18px;
+  width: clamp(78px, 9vw, 120px);
+  z-index: 10;
+  pointer-events: none;
+  animation: grinchFloat 4.8s ease-in-out infinite;
+}
+
+.char-grinch-strip img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 12px rgba(23, 163, 90, 0.48));
 }
 
 @keyframes grinchFloat {
@@ -1058,9 +1068,12 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
 }
 
 .char-spidey-setup {
-  right: 22px;
+  position: fixed;
+  right: clamp(12px, 3.5vw, 44px);
   top: 0;
-  width: clamp(92px, 12vw, 155px);
+  width: clamp(86px, 11vw, 142px);
+  z-index: 42;
+  pointer-events: none;
   transform-origin: top center;
   animation: spideySwing 6s ease-in-out infinite;
   display: flex;
@@ -1070,7 +1083,7 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
 
 .spidey-web-svg {
   width: 4px;
-  height: clamp(46px, 8vh, 92px);
+  height: clamp(54px, 9vh, 98px);
   display: block;
 }
 
@@ -1079,7 +1092,8 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
   height: auto;
   object-fit: contain;
   margin-top: -4px;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 14px rgba(232, 40, 58, 0.48));
+  pointer-events: auto;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 14px rgba(232, 40, 58, 0.55));
 }
 
 @keyframes spideySwing {
@@ -1088,19 +1102,23 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
 }
 
 @media (max-width: 767px) {
-  .char-grinch-setup {
-    width: 78px;
-    top: 72px;
-    left: -14px;
+  .char-grinch-machine {
+    width: 72px;
+    top: -18px;
+    left: -10px;
+  }
+
+  .char-grinch-strip {
+    display: none;
   }
 
   .char-spidey-setup {
-    width: 88px;
+    width: 82px;
     right: 6px;
   }
 
   .spidey-web-svg {
-    height: 44px;
+    height: 46px;
   }
 }
 

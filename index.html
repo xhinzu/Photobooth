@@ -20,9 +20,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..600&family=Fredoka:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="./css/tokens.css?v=5" />
-  <link rel="stylesheet" href="./css/layout.css?v=5" />
-  <link rel="stylesheet" href="./css/components.css?v=5" />
+  <link rel="stylesheet" href="./css/tokens.css?v=6" />
+  <link rel="stylesheet" href="./css/layout.css?v=6" />
+  <link rel="stylesheet" href="./css/components.css?v=6" />
 </head>
 <body>
   <!-- Bokeh, Snow & Stars Ambience, Vignette, and Top Fairy Garland -->
@@ -31,23 +31,20 @@
   <div class="night-vignette" aria-hidden="true"></div>
   <div class="fairy-garland fairy-garland-top" id="garland-top" aria-hidden="true"></div>
 
-  <!-- Grinch & Spider-Man Character Layer -->
-  <div class="char-grinch-setup" id="char-grinch" title="Tap for a holiday smirk">
-    <img src="./assets/custom/grinch-1.png" alt="Mischievous green holiday character peeking" loading="lazy" />
-  </div>
+  <!-- Spider-Man hanging from top-right of viewport on crisp white SVG web -->
   <div class="char-spidey-setup" id="char-spidey">
     <svg class="spidey-web-svg" viewBox="0 0 4 100" preserveAspectRatio="none" aria-hidden="true">
       <line x1="2" y1="0" x2="2" y2="100" stroke="#FFF4E0" stroke-width="2" />
     </svg>
-    <img src="./assets/custom/spiderman-1.png" alt="Spider-Man hanging upside down on a web" loading="lazy" />
+    <img src="./assets/custom/spiderman-1.png" alt="Spider-Man hanging upside down on a web" />
   </div>
 
   <!-- Title / Loading Intro -->
   <div class="title-card-overlay" id="title-card-overlay" hidden role="dialog" aria-label="Holiday Studio Intro">
     <div class="title-card-frame">
       <div class="title-card-chars">
-        <img src="./assets/custom/grinch-1.png" alt="Holiday Grinch" loading="lazy" />
-        <img src="./assets/custom/spiderman-1.png" alt="Spider-Man" loading="lazy" />
+        <img src="./assets/custom/grinch-1.png" alt="Holiday Grinch" />
+        <img src="./assets/custom/spiderman-1.png" alt="Spider-Man" />
       </div>
       <p class="eyebrow">MISTLETOE STUDIO PRESENTS</p>
       <h2 class="title-card-heading">Christmas Night Photobooth</h2>
@@ -246,6 +243,9 @@
         <!-- Right Column (Desktop) / Physical Booth Machine Body -->
         <section class="booth-stage" aria-label="Photobooth Machine">
           <div class="booth-machine" id="booth-machine">
+            <div class="char-grinch-machine" id="char-grinch" title="Tap for a holiday smirk">
+              <img src="./assets/custom/grinch-1.png" alt="Mischievous green holiday character peeking at the photobooth" />
+            </div>
             <div class="fairy-garland fairy-garland-machine" id="garland-machine" aria-hidden="true"></div>
             <!-- Machine Top Bezel: Lens Ring, LED Indicator, Coin Detail -->
             <div class="machine-top-bezel">
@@ -402,6 +402,9 @@
         <div class="editor-stage-col">
           <div class="fairy-garland fairy-garland-strip" id="garland-strip" aria-hidden="true"></div>
           <div class="strip-stage" id="strip-stage">
+            <div class="char-grinch-strip" aria-hidden="true">
+              <img src="./assets/custom/grinch-1.png" alt="" />
+            </div>
             <div class="strip-paper-wrap" id="strip-paper-wrap">
               <canvas id="strip-canvas" aria-label="Edited photo strip preview"></canvas>
               <div class="strip-overlay" id="strip-overlay"></div>
@@ -711,6 +714,6 @@
   <!-- TOAST REGION -->
   <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
 
-  <script type="module" src="./js/ui.js?v=5"></script>
+  <script type="module" src="./js/ui.js?v=6"></script>
 </body>
 </html>

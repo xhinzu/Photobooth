@@ -23,3 +23,4 @@ const files = fs
 
 fs.writeFileSync(manifestPath, JSON.stringify({ images: files }, null, 2) + '\n', 'utf8');
 console.log(`Generated ${manifestPath} with ${files.length} image(s):`, files);
+

@@ -1,12 +1,12 @@
-const CACHE_NAME = 'mistletoe-photobooth-v5';
+const CACHE_NAME = 'mistletoe-photobooth-v6';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './favicon.svg',
-  './css/tokens.css?v=5',
-  './css/layout.css?v=5',
-  './css/components.css?v=5',
+  './css/tokens.css?v=6',
+  './css/layout.css?v=6',
+  './css/components.css?v=6',
   './js/state.js',
   './js/themes.js',
   './js/theme-renderer.js',
@@ -21,7 +21,7 @@ const ASSETS = [
   './js/print-animation.js',
   './js/editor.js',
   './js/share.js',
-  './js/ui.js?v=5',
+  './js/ui.js?v=6',
   './assets/custom/manifest.json',
   './assets/custom/grinch-1.png',
   './assets/custom/spiderman-1.png'
