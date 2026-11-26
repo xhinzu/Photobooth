@@ -12,6 +12,8 @@ import {
   drawThemeBorder,
   drawThemeOverlay,
   drawWashiTapeCorners,
+  drawSceneFrame,
+  drawLightLeak,
 } from './theme-renderer.js';
 
 export function computeStripGeometry(poseCount, layout, borderWidth = 18, hasFooter = true, themeId = 'minimal') {
@@ -125,16 +127,41 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
   const theme = getThemeById(edits.themeId || 'minimal');
   const hasFooter = Boolean(frame.caption || frame.showDate || frame.showBranding);
   const geom = computeStripGeometry(captures.length, frame.layout, frame.borderWidth, hasFooter, theme.id);
+  const titleHeaderH = frame.titleCardExport ? 64 : 0;
 
   targetCanvas.width = Math.round(geom.width * scale);
-  targetCanvas.height = Math.round(geom.height * scale);
+  targetCanvas.height = Math.round((geom.height + titleHeaderH) * scale);
 
   const ctx = targetCanvas.getContext('2d');
   ctx.save();
   ctx.scale(scale, scale);
 
-  // 1. Theme Paper Background & Below-Photo Overlay
+  if (titleHeaderH > 0) {
+    ctx.fillStyle = '#0B0B0C';
+    ctx.fillRect(0, 0, geom.width, titleHeaderH);
+    ctx.strokeStyle = '#EDEBE6';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(6, 6, geom.width - 12, titleHeaderH - 10);
+    ctx.fillStyle = '#EDEBE6';
+    ctx.textAlign = 'center';
+    ctx.font = 'italic 900 15px "Playfair Display", Georgia, serif';
+    ctx.fillText('A MISTLETOE PICTURE', geom.width / 2, 28);
+    ctx.font = '500 9px "Special Elite", "Courier Prime", monospace';
+    ctx.fillText('PRESENTING YOUR HOLIDAY PORTRAIT', geom.width / 2, 46);
+    ctx.translate(0, titleHeaderH);
+  }
+
+  // 1. Theme Paper Background & Custom Background Image (if selected)
   drawThemeBackground(ctx, geom.width, geom.height, theme, frame.bgColor);
+  if (frame.customBgId) {
+    const bgImg = await loadStickerImage(frame.customBgId, null, false, appState.session.matchFilmLook);
+    if (bgImg) {
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.drawImage(bgImg, 0, 0, geom.width, geom.height);
+      ctx.restore();
+    }
+  }
   drawThemeOverlay(ctx, geom.width, geom.height, geom.slots, theme, 'below');
 
   // Double-strip perforation line
@@ -255,6 +282,15 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
     ctx.clip();
     ctx.drawImage(offscreen, slot.x, slot.y, slot.w, slot.h);
 
+    // Double off-white inner frame border (Midnight Reel)
+    if (theme.photoFrame.shape === 'double-ink') {
+      ctx.strokeStyle = '#EDEBE6';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(slot.x + 1, slot.y + 1, slot.w - 2, slot.h - 2);
+      ctx.lineWidth = 0.8;
+      ctx.strokeRect(slot.x + 4, slot.y + 4, slot.w - 8, slot.h - 8);
+    }
+
     // Y2K Glossy highlight
     if (theme.photoFrame.glossy) {
       const gloss = ctx.createLinearGradient(slot.x, slot.y, slot.x, slot.y + slot.h * 0.45);
@@ -273,8 +309,12 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
     ctx.restore();
   }
 
-  // 3. Theme Border & Above-Photo Overlay
+  // 3. Theme Border, Scene Frame, Light Leak & Above-Photo Overlay
   drawThemeBorder(ctx, geom.width, geom.height, theme);
+  drawSceneFrame(ctx, geom.width, geom.height, frame.sceneFrame);
+  if (frame.lightLeak) {
+    drawLightLeak(ctx, geom.width, geom.height);
+  }
   drawThemeOverlay(ctx, geom.width, geom.height, geom.slots, theme, 'above');
 
   // 4. Footer Caption, Date Stamp, and Branding
@@ -364,7 +404,7 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
       ctx.scale(item.scale || 1, item.scale || 1);
 
       if (item.kind === 'sticker') {
-        const img = await loadStickerImage(item.stickerId, item.color || null, true);
+        const img = await loadStickerImage(item.stickerId, item.color || null, true, appState.session.matchFilmLook);
         if (img) {
           const w = item.width || 72;
           const h = item.height || 72;

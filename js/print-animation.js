@@ -13,6 +13,7 @@ import {
   stopPrinterWhirr,
   playPrinterStepTick,
   playPrintDing,
+  playMusicBoxJingle,
 } from './audio.js';
 
 export const PRINT_DURATION_MS = 6500;
@@ -221,7 +222,11 @@ export async function playPrintSequence(appState, dom) {
       if (elapsed >= tPrintEnd && !finishTriggered) {
         finishTriggered = true;
         stopPrinterWhirr();
-        playPrintDing();
+        if (appState.session?.filmMode) {
+          playMusicBoxJingle();
+        } else {
+          playPrintDing();
+        }
         printerSlotGlow.classList.remove('is-lit');
         lightSweep.style.opacity = '0';
         veils.forEach((v) => { v.style.opacity = '0'; });

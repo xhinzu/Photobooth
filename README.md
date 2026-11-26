@@ -35,6 +35,20 @@ Then open [http://localhost:8080](http://localhost:8080) in your browser.
 
 To test on a mobile device over your local network, serve over HTTPS (e.g., via a local TLS proxy or tunnel) so `getUserMedia` and `navigator.share` are available.
 
+## User-Supplied Custom Images (`/assets/custom/`)
+
+Drop personal or licensed PNG, JPG, or SVG files into `assets/custom/` and list their filenames in `assets/custom/manifest.json`:
+
+```json
+{
+  "images": ["my-holiday-badge.png", "family-crest.svg"]
+}
+```
+
+They will appear automatically in the **My Uploads** sticker tab (and can also be uploaded at runtime into IndexedDB). Enable **Match Film** to auto-convert custom images to high-contrast monochrome to match the Midnight Reel aesthetic.
+
+> **Copyright Note:** Any images placed in `assets/custom/` or uploaded at runtime must be assets you own or have the right to use, especially if you publish this app publicly.
+
 ## Extending Themes & Sticker Packs
 
 Themes and sticker packs are pure data objects in `js/themes.js` and `js/sticker-packs.js`. Adding a new theme or pack requires only adding one object—no renderer code changes.

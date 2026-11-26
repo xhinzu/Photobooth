@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-skin="midnight">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -18,13 +18,27 @@
   <!-- Google Fonts: Anton (Condensed Display), DM Sans (UI/Body), IBM Plex Mono (Technical/Captions) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Courier+Prime:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..600&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,700;1,900&family=Special+Elite&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="./css/tokens.css" />
   <link rel="stylesheet" href="./css/layout.css" />
   <link rel="stylesheet" href="./css/components.css" />
+  <link rel="stylesheet" href="./css/skin-midnight.css" />
 </head>
 <body>
+  <!-- Single-canvas 1940s-50s Film FX & Snow Overlay -->
+  <canvas id="film-fx-canvas" class="film-fx-canvas" aria-hidden="true"></canvas>
+
+  <!-- Title Card Intro (shown once per session in Film mode) -->
+  <div class="title-card-overlay" id="title-card-overlay" hidden role="dialog" aria-label="Film Title Card Intro">
+    <div class="title-card-frame">
+      <p class="eyebrow">A MISTLETOE PICTURE</p>
+      <h2 class="title-card-heading">Presenting: Your Christmas Portrait</h2>
+      <p class="title-card-sub">Captured on 35mm Midnight Reel &middot; Local Darkroom</p>
+      <div class="leader-circle-wipe tabular" id="intro-leader-num" aria-live="polite">3</div>
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-skip-intro">Skip Intro</button>
+    </div>
+  </div>
   <!-- Layered paper grain & faint edge vignette -->
   <svg class="grain-svg" aria-hidden="true" width="0" height="0">
     <filter id="paper-grain">
@@ -62,6 +76,14 @@
             Reset
           </button>
         </div>
+
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-film-mode" aria-pressed="true" title="Toggle 1940s B&W Film Skin">
+          Film Mode: On
+        </button>
+
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-crackle-toggle" aria-pressed="false" title="Toggle soft vinyl crackle loop">
+          Crackle: Off
+        </button>
 
         <button type="button" class="btn btn-ghost btn-sm" id="btn-sound-toggle" aria-pressed="false" aria-label="Toggle shutter and printer sound">
           <svg class="icon-line" id="icon-sound" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.8l3.7-3v10L5.3 10H2.5V6zm9.2-.3a3.8 3.8 0 0 1 0 4.6m1.9-6.4a6.4 6.4 0 0 1 0 8.2"/></svg>
@@ -498,7 +520,22 @@
 
               <div class="control-group">
                 <label class="control-label" for="input-caption">STRIP CAPTION</label>
-                <input type="text" id="input-caption" class="text-input" maxlength="42" placeholder="e.g. Late Night Studio" />
+                <input type="text" id="input-caption" class="text-input" maxlength="42" placeholder="e.g. A CHRISTMAS TO REMEMBER" />
+                <div class="chip-row" id="caption-presets"></div>
+              </div>
+
+              <div class="control-group">
+                <label class="control-label">SCENE FRAME</label>
+                <div class="chip-row" id="scene-frame-group"></div>
+              </div>
+
+              <div class="toggle-pair">
+                <button type="button" class="pill-toggle" id="btn-light-leak" aria-pressed="false">
+                  Light Leak: Off
+                </button>
+                <button type="button" class="pill-toggle" id="btn-title-card-export" aria-pressed="false">
+                  Title Card Header: Off
+                </button>
               </div>
 
               <div class="control-group">
@@ -530,7 +567,10 @@
                 <button type="button" class="btn btn-ghost btn-sm" id="btn-upload-sticker" title="Upload PNG or SVG sticker">
                   Upload
                 </button>
-                <input type="file" id="input-sticker-upload" accept=".png,.svg,image/png,image/svg+xml" hidden />
+                <button type="button" class="pill-toggle is-active" id="btn-match-film-look" aria-pressed="true" title="Convert custom images to B&W film look">
+                  Match Film
+                </button>
+                <input type="file" id="input-sticker-upload" accept=".png,.svg,.jpg,.jpeg,image/png,image/svg+xml,image/jpeg" hidden />
               </div>
 
               <div class="sticker-recent-wrap" id="sticker-recent-wrap" hidden>

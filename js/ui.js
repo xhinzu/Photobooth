@@ -21,11 +21,14 @@ import {
   PEN_COLORS,
   DEFAULT_ADJUSTMENTS,
 } from './state.js';
-import { STRIP_THEMES, getThemeById, applyThemeToAppUI } from './themes.js';
+import { STRIP_THEMES, MIDNIGHT_CAPTIONS, SCENE_FRAMES, getThemeById, applyThemeToAppUI } from './themes.js';
 import { renderThemeMiniPreview } from './theme-renderer.js';
+import { startFilmFX } from './film-fx.js';
 import {
   isSoundEnabled,
   setSoundEnabled,
+  isCrackleEnabled,
+  setCrackleEnabled,
   ensureAudioContext,
   playCountdownTick,
   playShutterThunk,
@@ -80,6 +83,12 @@ const els = {
   btnResetEdits: $('btn-reset-edits'),
   btnSoundToggle: $('btn-sound-toggle'),
   labelSoundToggle: $('label-sound-toggle'),
+  btnFilmMode: $('btn-film-mode'),
+  btnCrackleToggle: $('btn-crackle-toggle'),
+  filmFxCanvas: $('film-fx-canvas'),
+  titleCardOverlay: $('title-card-overlay'),
+  introLeaderNum: $('intro-leader-num'),
+  btnSkipIntro: $('btn-skip-intro'),
 
   // Setup & Capture
   setupHeadline: $('setup-headline'),
@@ -162,6 +171,10 @@ const els = {
   sliderRadius: $('slider-radius'),
   valRadius: $('val-radius'),
   inputCaption: $('input-caption'),
+  captionPresets: $('caption-presets'),
+  sceneFrameGroup: $('scene-frame-group'),
+  btnLightLeak: $('btn-light-leak'),
+  btnTitleCardExport: $('btn-title-card-export'),
   captionFontGroup: $('caption-font-group'),
   btnDateStamp: $('btn-date-stamp'),
   btnBrandingLine: $('btn-branding-line'),
@@ -170,6 +183,7 @@ const els = {
   inputStickerSearch: $('input-sticker-search'),
   btnSurpriseStickers: $('btn-surprise-stickers'),
   btnUploadSticker: $('btn-upload-sticker'),
+  btnMatchFilmLook: $('btn-match-film-look'),
   inputStickerUpload: $('input-sticker-upload'),
   stickerRecentWrap: $('sticker-recent-wrap'),
   stickerRecentRow: $('sticker-recent-row'),
@@ -729,9 +743,47 @@ function buildEditorControls() {
   });
   els.paperSwatches.appendChild(customColor);
 
+  // 4. Sticker packs, search, recent & custom uploads
   renderStickerPackTabs();
   renderStickerCategory();
   renderRecentStickers();
+
+  // 4b. Caption presets & Scene frames
+  if (els.captionPresets) {
+    els.captionPresets.innerHTML = '';
+    for (const capText of MIDNIGHT_CAPTIONS) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip-btn';
+      b.textContent = capText;
+      b.addEventListener('click', () => {
+        pushHistory();
+        state.edits.frame.caption = capText;
+        syncEditorControls();
+        scheduleRender();
+      });
+      els.captionPresets.appendChild(b);
+    }
+  }
+  if (els.sceneFrameGroup) {
+    els.sceneFrameGroup.innerHTML = '';
+    for (const sf of SCENE_FRAMES) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip-btn';
+      b.dataset.sceneFrame = sf.id;
+      b.textContent = sf.label;
+      b.addEventListener('click', () => {
+        pushHistory();
+        state.edits.frame.sceneFrame = sf.id;
+        syncEditorControls();
+        scheduleRender();
+      });
+      els.sceneFrameGroup.appendChild(b);
+    }
+  }
+
+  // 5. Theme grids (Setup & Editor)
   renderThemeGrid(els.setupThemeGrid, []);
   renderThemeGrid(els.editorThemeGrid, []);
 
@@ -933,6 +985,19 @@ function renderStickerCategory() {
       btn.setAttribute('aria-label', `Add custom sticker ${c.label}`);
       btn.innerHTML = `<img src="${c.dataUrl}" alt="${c.label}" />`;
       btn.addEventListener('click', () => addStickerOverlay(c.id));
+
+      const bgDot = document.createElement('span');
+      bgDot.className = `sticker-fav-dot ${state.edits.frame.customBgId === c.id ? 'is-fav' : ''}`;
+      bgDot.textContent = 'BG';
+      bgDot.title = 'Use as strip background';
+      bgDot.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        pushHistory();
+        state.edits.frame.customBgId = state.edits.frame.customBgId === c.id ? null : c.id;
+        renderStickerCategory();
+        scheduleRender();
+      });
+      btn.appendChild(bgDot);
       els.stickerGrid.appendChild(btn);
     }
     return;
@@ -1028,6 +1093,26 @@ function syncEditorControls() {
   els.btnBrandingLine.classList.toggle('is-active', edits.frame.showBranding);
   els.btnBrandingLine.textContent = `Studio Mark: ${edits.frame.showBranding ? 'On' : 'Off'}`;
 
+  if (els.sceneFrameGroup) {
+    for (const btn of els.sceneFrameGroup.querySelectorAll('.chip-btn')) {
+      btn.classList.toggle('is-active', btn.dataset.sceneFrame === (edits.frame.sceneFrame || 'none'));
+    }
+  }
+  if (els.btnLightLeak) {
+    els.btnLightLeak.classList.toggle('is-active', Boolean(edits.frame.lightLeak));
+    els.btnLightLeak.textContent = `Light Leak: ${edits.frame.lightLeak ? 'On' : 'Off'}`;
+    els.btnLightLeak.setAttribute('aria-pressed', String(Boolean(edits.frame.lightLeak)));
+  }
+  if (els.btnTitleCardExport) {
+    els.btnTitleCardExport.classList.toggle('is-active', Boolean(edits.frame.titleCardExport));
+    els.btnTitleCardExport.textContent = `Title Card Header: ${edits.frame.titleCardExport ? 'On' : 'Off'}`;
+    els.btnTitleCardExport.setAttribute('aria-pressed', String(Boolean(edits.frame.titleCardExport)));
+  }
+  if (els.btnMatchFilmLook) {
+    els.btnMatchFilmLook.classList.toggle('is-active', Boolean(state.session.matchFilmLook));
+    els.btnMatchFilmLook.setAttribute('aria-pressed', String(Boolean(state.session.matchFilmLook)));
+  }
+
   els.btnDrawMode.classList.toggle('is-active', drawTool.active);
   els.btnDrawMode.textContent = `Pen: ${drawTool.active ? 'On' : 'Off'}`;
   els.btnDrawMode.setAttribute('aria-pressed', String(drawTool.active));
@@ -1077,6 +1162,39 @@ function bindEvents() {
   els.btnSoundToggle.addEventListener('click', () => {
     setSoundEnabled(!isSoundEnabled());
     syncSoundUI();
+  });
+
+  els.btnFilmMode?.addEventListener('click', () => {
+    state.session.filmMode = !state.session.filmMode;
+    try { localStorage.setItem('mistletoe_film_mode', String(state.session.filmMode)); } catch {}
+    syncFilmModeUI();
+  });
+
+  els.btnCrackleToggle?.addEventListener('click', () => {
+    ensureAudioContext();
+    const on = setCrackleEnabled(!isCrackleEnabled());
+    els.btnCrackleToggle.textContent = `Crackle: ${on ? 'On' : 'Off'}`;
+    els.btnCrackleToggle.setAttribute('aria-pressed', String(on));
+  });
+
+  els.btnLightLeak?.addEventListener('click', () => {
+    pushHistory();
+    state.edits.frame.lightLeak = !state.edits.frame.lightLeak;
+    syncEditorControls();
+    scheduleRender();
+  });
+
+  els.btnTitleCardExport?.addEventListener('click', () => {
+    pushHistory();
+    state.edits.frame.titleCardExport = !state.edits.frame.titleCardExport;
+    syncEditorControls();
+    scheduleRender();
+  });
+
+  els.btnMatchFilmLook?.addEventListener('click', () => {
+    state.session.matchFilmLook = !state.session.matchFilmLook;
+    syncEditorControls();
+    scheduleRender();
   });
 
   els.poseCountGroup.addEventListener('click', (e) => {
@@ -1508,8 +1626,61 @@ async function bootstrap() {
     }
   });
 
+function syncFilmModeUI() {
+  const on = Boolean(state.session.filmMode);
+  if (on) {
+    document.documentElement.setAttribute('data-skin', 'midnight');
+  } else {
+    document.documentElement.removeAttribute('data-skin');
+  }
+  if (els.btnFilmMode) {
+    els.btnFilmMode.textContent = `Film Mode: ${on ? 'On' : 'Off'}`;
+    els.btnFilmMode.setAttribute('aria-pressed', String(on));
+  }
+  applyThemeToAppUI(getThemeById(state.screen === 'editor' ? state.edits.themeId : state.session.themeId));
+}
+
+async function runTitleCardIntroOnce() {
+  if (!state.session.filmMode || !els.titleCardOverlay) return;
+  try {
+    if (sessionStorage.getItem('mistletoe_intro_seen') === '1') return;
+    sessionStorage.setItem('mistletoe_intro_seen', '1');
+  } catch {
+    // Ignore storage restrictions
+  }
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) return;
+
+  els.titleCardOverlay.hidden = false;
+  await new Promise((resolve) => {
+    let cancelled = false;
+    const finish = () => {
+      if (cancelled) return;
+      cancelled = true;
+      els.titleCardOverlay.hidden = true;
+      els.btnSkipIntro?.removeEventListener('click', finish);
+      resolve();
+    };
+    els.btnSkipIntro?.addEventListener('click', finish);
+
+    let count = 3;
+    els.introLeaderNum.textContent = String(count);
+    const timer = setInterval(() => {
+      count--;
+      if (count <= 0) {
+        clearInterval(timer);
+        finish();
+      } else {
+        els.introLeaderNum.textContent = String(count);
+      }
+    }, 750);
+  });
+}
+
   await loadCustomStickers();
-  applyThemeToAppUI(getThemeById(state.session.themeId));
+  syncFilmModeUI();
+  startFilmFX(els.filmFxCanvas, () => ({ filmMode: state.session.filmMode, screen: state.screen }));
   activeStickerCat = getThemeById(state.session.themeId).packId;
   syncSoundUI();
   buildEditorControls();
@@ -1517,6 +1688,7 @@ async function bootstrap() {
   setupMobileSheetDrag();
   syncSetupUI();
   bindEvents();
+  runTitleCardIntroOnce();
   await initCameraStream();
 
   if ('serviceWorker' in navigator) {

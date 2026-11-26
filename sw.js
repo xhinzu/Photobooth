@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mistletoe-photobooth-v3';
+const CACHE_NAME = 'mistletoe-photobooth-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -7,9 +7,11 @@ const ASSETS = [
   './css/tokens.css',
   './css/layout.css',
   './css/components.css',
+  './css/skin-midnight.css',
   './js/state.js',
   './js/themes.js',
   './js/theme-renderer.js',
+  './js/film-fx.js',
   './js/audio.js',
   './js/camera.js',
   './js/filters.js',
@@ -19,7 +21,8 @@ const ASSETS = [
   './js/print-animation.js',
   './js/editor.js',
   './js/share.js',
-  './js/ui.js'
+  './js/ui.js',
+  './assets/custom/manifest.json'
 ];
 
 self.addEventListener('install', (event) => {

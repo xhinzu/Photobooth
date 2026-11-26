@@ -9,7 +9,9 @@ const STORAGE_KEY = 'mistletoe_sound_enabled';
 
 let audioCtx = null;
 let whirrNodes = null;
+let crackleNodes = null;
 let soundEnabled = loadSoundPreference();
+let crackleEnabled = false;
 
 function loadSoundPreference() {
   try {
@@ -33,8 +35,77 @@ export function setSoundEnabled(enabled) {
   }
   if (!soundEnabled) {
     stopPrinterWhirr();
+    stopVinylCrackle();
   }
   return soundEnabled;
+}
+
+export function isCrackleEnabled() {
+  return crackleEnabled;
+}
+
+export function setCrackleEnabled(enabled) {
+  crackleEnabled = Boolean(enabled);
+  if (crackleEnabled && soundEnabled) startVinylCrackle();
+  else stopVinylCrackle();
+  return crackleEnabled;
+}
+
+export function startVinylCrackle() {
+  const ctx = ensureAudioContext();
+  if (!ctx || crackleNodes) return;
+  const len = ctx.sampleRate * 2;
+  const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < len; i++) {
+    data[i] = Math.random() < 0.0025 ? (Math.random() * 2 - 1) * 0.65 : (Math.random() * 2 - 1) * 0.015;
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  src.loop = true;
+
+  const hp = ctx.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.setValueAtTime(1200, ctx.currentTime);
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.03, ctx.currentTime);
+
+  src.connect(hp);
+  hp.connect(gain);
+  gain.connect(ctx.destination);
+  src.start();
+  crackleNodes = { src, gain };
+}
+
+export function stopVinylCrackle() {
+  if (!crackleNodes) return;
+  try {
+    crackleNodes.src.stop();
+  } catch {
+    // Ignore
+  }
+  crackleNodes = null;
+}
+
+export function playMusicBoxJingle() {
+  const ctx = ensureAudioContext();
+  if (!ctx) return;
+  const notes = [659.25, 659.25, 659.25, 783.99, 523.25, 587.33, 659.25];
+  const now = ctx.currentTime;
+  notes.forEach((freq, i) => {
+    const t = now + i * 0.14;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(0.06, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.36);
+  });
 }
 
 export function ensureAudioContext() {

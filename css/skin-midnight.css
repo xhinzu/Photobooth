@@ -1,0 +1,269 @@
+/* 1940s-50s B&W Holiday Film Skin ("Midnight Reel")
+ * Strictly monochrome: #0B0B0C near-black, #EDEBE6 warm off-white, and 4 greys.
+ * Active when <html data-skin="midnight">.
+ */
+
+:root[data-skin="midnight"] {
+  --bg-cream: #0B0B0C;
+  --bg-cream-deep: #141416;
+  --bg-paper: #17171A;
+  --bg-surface: #121214;
+  --machine-body: #141416;
+  --machine-trim: #242428;
+  --ink: #EDEBE6;
+  --ink-muted: #A6A49E;
+  --ink-subtle: #7A7976;
+  --border-hairline: rgba(237, 235, 230, 0.22);
+  --border-strong: rgba(237, 235, 230, 0.85);
+
+  /* Monochrome Accent (zero color leaks) */
+  --accent: #EDEBE6;
+  --accent-hover: #FFFFFF;
+  --accent-soft: rgba(237, 235, 230, 0.16);
+
+  /* Monochrome LEDs */
+  --led-idle: #5A5956;
+  --led-shooting: #EDEBE6;
+  --led-printing: #B5B3AE;
+  --led-ready: #FFFFFF;
+
+  /* 1940s Film Typography */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Special Elite', 'Courier Prime', monospace;
+  --font-mono: 'Special Elite', 'Courier Prime', monospace;
+
+  color-scheme: dark;
+}
+
+/* Monochrome Scrollbars */
+:root[data-skin="midnight"] ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+:root[data-skin="midnight"] ::-webkit-scrollbar-track {
+  background: #0B0B0C;
+}
+:root[data-skin="midnight"] ::-webkit-scrollbar-thumb {
+  background: #3A3A3E;
+  border-radius: 3px;
+}
+
+/* White focus ring in dark film mode */
+:root[data-skin="midnight"] :focus-visible {
+  outline: 2px solid #EDEBE6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(237, 235, 230, 0.22);
+}
+
+/* Projector rounded corners + vignette */
+.film-fx-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9995;
+  display: none;
+}
+
+:root[data-skin="midnight"] .film-fx-canvas {
+  display: block;
+}
+
+:root[data-skin="midnight"] .paper-grain-layer {
+  display: none;
+}
+
+:root[data-skin="midnight"] .paper-vignette {
+  box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.85);
+  border-radius: 18px;
+}
+
+/* Title Card Intro Overlay */
+.title-card-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: #0B0B0C;
+  color: #EDEBE6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-4);
+  gap: var(--space-3);
+}
+
+.title-card-frame {
+  max-width: 520px;
+  width: 100%;
+  padding: var(--space-5) var(--space-4);
+  border: 2px double rgba(237, 235, 230, 0.72);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.title-card-heading {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.05;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.title-card-sub {
+  margin: 0;
+  font-family: 'Special Elite', monospace;
+  font-size: 0.95rem;
+  color: #B5B3AE;
+  letter-spacing: 0.06em;
+}
+
+.leader-circle-wipe {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid #EDEBE6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Special Elite', monospace;
+  font-size: 1.8rem;
+  position: relative;
+}
+
+.leader-circle-wipe::before,
+.leader-circle-wipe::after {
+  content: '';
+  position: absolute;
+  background: rgba(237, 235, 230, 0.35);
+}
+.leader-circle-wipe::before {
+  width: 100%;
+  height: 1px;
+}
+.leader-circle-wipe::after {
+  height: 100%;
+  width: 1px;
+}
+
+/* Engraved Marquee / Double-line Borders & Inverted Active Buttons */
+:root[data-skin="midnight"] .hero-headline {
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+:root[data-skin="midnight"] .btn-primary,
+:root[data-skin="midnight"] .btn-accent {
+  background: #EDEBE6;
+  color: #0B0B0C;
+  border: 2px double #0B0B0C;
+}
+
+:root[data-skin="midnight"] .btn-primary:hover:not(:disabled),
+:root[data-skin="midnight"] .btn-accent:hover:not(:disabled) {
+  background: #FFFFFF;
+}
+
+:root[data-skin="midnight"] .btn-secondary {
+  background: #141416;
+  color: #EDEBE6;
+  border: 2px double rgba(237, 235, 230, 0.65);
+}
+
+:root[data-skin="midnight"] .seg-indicator {
+  background: #EDEBE6;
+}
+
+:root[data-skin="midnight"] .seg-btn.is-active {
+  color: #0B0B0C;
+}
+
+:root[data-skin="midnight"] .layout-indicator {
+  background: #EDEBE6;
+  border-color: #EDEBE6;
+}
+
+:root[data-skin="midnight"] .layout-btn.is-active {
+  color: #0B0B0C;
+}
+
+:root[data-skin="midnight"] .chip-btn.is-active,
+:root[data-skin="midnight"] .pill-toggle.is-active,
+:root[data-skin="midnight"] .pack-tab-btn.is-active,
+:root[data-skin="midnight"] .filter-card.is-active {
+  background: #EDEBE6;
+  color: #0B0B0C;
+  border-color: #EDEBE6;
+}
+
+/* Forced B&W Film LUT on live camera preview in Film Mode */
+:root[data-skin="midnight"] #camera-video {
+  filter: grayscale(1) contrast(1.22) brightness(1.04) drop-shadow(0 0 6px rgba(237, 235, 230, 0.12)) !important;
+}
+
+:root[data-skin="midnight"] .scalloped-frame {
+  border: 2px double rgba(237, 235, 230, 0.55);
+}
+
+/* Film Leader Countdown (Circle + Crosshairs + Sweeping Radar) */
+:root[data-skin="midnight"] .countdown-overlay {
+  background: radial-gradient(circle, transparent 42%, rgba(11, 11, 12, 0.55) 100%);
+}
+
+:root[data-skin="midnight"] .countdown-number {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  border: 2px solid #EDEBE6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4.5rem;
+  color: #EDEBE6;
+  background: rgba(11, 11, 12, 0.45);
+  position: relative;
+}
+
+:root[data-skin="midnight"] .countdown-number::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(237, 235, 230, 0.32) 0deg, transparent 70deg);
+  animation: radarSweep 1s linear infinite;
+}
+
+@keyframes radarSweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Darkroom Black-Fade Developing Veil in Midnight Mode */
+:root[data-skin="midnight"] .develop-veil {
+  background: rgba(11, 11, 12, 0.94);
+  backdrop-filter: contrast(1.6) brightness(0.3);
+}
+
+:root[data-skin="midnight"] .printer-slot-glow {
+  background: linear-gradient(90deg, transparent, rgba(237, 235, 230, 0.65), transparent);
+}
+
+/* Monochrome Filter Swatches & Paper Swatches */
+:root[data-skin="midnight"] .filter-swatch {
+  filter: grayscale(1);
+}
+
+:root[data-skin="midnight"] .toast {
+  background: #EDEBE6;
+  color: #0B0B0C;
+  border: 1px solid #0B0B0C;
+}

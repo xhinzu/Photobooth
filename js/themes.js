@@ -5,7 +5,64 @@
 
 const THEME_STORAGE_KEY = 'mistletoe_active_theme';
 
+export const MIDNIGHT_CAPTIONS = [
+  'A CHRISTMAS TO REMEMBER',
+  'The Night Before',
+  'Naughty or Nice?',
+  'No Presents Were Harmed',
+  'Silent Night, Smirking Faces',
+  'Fin.',
+];
+
+export const SCENE_FRAMES = [
+  { id: 'none', label: 'None' },
+  { id: 'rooftop', label: 'Snowy Rooftop' },
+  { id: 'stockings', label: 'Hanging Stockings' },
+  { id: 'window', label: 'Snowy Window' },
+  { id: 'poster', label: 'Film Poster' },
+];
+
 export const STRIP_THEMES = [
+  {
+    id: 'midnight-reel',
+    name: 'Midnight Reel',
+    tagline: '1940s B&W film, sprockets & snow',
+    accentColor: '#EDEBE6',
+    accentHover: '#FFFFFF',
+    packId: 'scoundrel',
+    background: {
+      type: 'solid',
+      color: '#0B0B0C',
+    },
+    border: {
+      style: 'sprocket',
+      color: '#EDEBE6',
+      thickness: 24,
+      radius: 0,
+    },
+    photoFrame: {
+      shape: 'double-ink',
+      tiltMaxDeg: 0,
+      shadow: false,
+      glossy: false,
+      polaroidPadBottom: 0,
+      tapeCorners: false,
+      perPhotoCaption: false,
+    },
+    defaults: {
+      filter: 'hc-bw',
+      adjustments: { grain: 32, vignette: 28, warmth: 0 },
+    },
+    caption: {
+      font: 'mono',
+      color: '#EDEBE6',
+      defaultText: 'A CHRISTMAS TO REMEMBER',
+    },
+    overlay: {
+      type: 'midnight-snow',
+      layer: 'above',
+    },
+  },
   {
     id: 'minimal',
     name: 'Minimal',
@@ -338,9 +395,9 @@ export function getThemeById(id) {
 export function loadSavedThemeId() {
   try {
     const saved = localStorage.getItem(THEME_STORAGE_KEY);
-    return saved && STRIP_THEMES.some((t) => t.id === saved) ? saved : 'minimal';
+    return saved && STRIP_THEMES.some((t) => t.id === saved) ? saved : 'midnight-reel';
   } catch {
-    return 'minimal';
+    return 'midnight-reel';
   }
 }
 
@@ -357,3 +414,4 @@ export function applyThemeToAppUI(theme) {
   root.style.setProperty('--accent', theme.accentColor);
   root.style.setProperty('--accent-hover', theme.accentHover);
 }
+

@@ -197,6 +197,32 @@ export function drawThemeOverlay(ctx, width, height, slots, theme, phase = 'abov
       ctx.closePath();
       ctx.fill();
     }
+  } else if (type === 'midnight-snow') {
+    // Snowfall, dust specks, light scratches & 35mm frame numbers
+    ctx.fillStyle = 'rgba(237, 235, 230, 0.82)';
+    for (let i = 0; i < 28; i++) {
+      const sx = ((i * 79 + 13) % 97) / 100 * width;
+      const sy = ((i * 53 + 17) % 95) / 100 * height;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 1 + (i % 2.5), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(237, 235, 230, 0.22)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(width * 0.19, 12);
+    ctx.lineTo(width * 0.19, height - 18);
+    ctx.moveTo(width * 0.83, 24);
+    ctx.lineTo(width * 0.83, height - 24);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(237, 235, 230, 0.78)';
+    ctx.font = '600 8px "Courier Prime", "IBM Plex Mono", monospace';
+    for (const s of slots) {
+      if (s.stripIndex === 0) {
+        ctx.fillText(`${s.photoIndex + 1}A`, s.x - 16, s.y + s.h / 2);
+      }
+    }
   } else if (type === 'doodles') {
     ctx.strokeStyle = 'rgba(42, 30, 22, 0.35)';
     ctx.lineWidth = 1.5;
@@ -278,3 +304,74 @@ export function renderThemeMiniPreview(canvas, theme, captures = []) {
   drawThemeBorder(ctx, w, h, theme);
   drawThemeOverlay(ctx, w, h, [], theme, 'above');
 }
+
+export function drawSceneFrame(ctx, width, height, sceneId) {
+  if (!sceneId || sceneId === 'none') return;
+  ctx.save();
+  ctx.strokeStyle = '#EDEBE6';
+  ctx.fillStyle = '#EDEBE6';
+
+  if (sceneId === 'rooftop') {
+    // Snowy rooftop silhouette + sneaking scoundrel silhouette at top-right corner
+    ctx.fillStyle = '#0B0B0C';
+    ctx.beginPath();
+    ctx.moveTo(0, 26);
+    ctx.lineTo(width * 0.45, 8);
+    ctx.lineTo(width, 26);
+    ctx.lineTo(width, 0);
+    ctx.lineTo(0, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#EDEBE6';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 26);
+    ctx.lineTo(width * 0.45, 8);
+    ctx.lineTo(width, 26);
+    ctx.stroke();
+    // Peeking crooked-hat scoundrel silhouette
+    ctx.beginPath();
+    ctx.arc(width - 28, 22, 7, Math.PI, 0);
+    ctx.moveTo(width - 33, 16);
+    ctx.lineTo(width - 24, 6);
+    ctx.lineTo(width - 21, 16);
+    ctx.fill();
+  } else if (sceneId === 'stockings') {
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(14, 14);
+    ctx.quadraticCurveTo(width / 2, 22, width - 14, 14);
+    ctx.stroke();
+    for (let x = 34; x < width - 26; x += 48) {
+      ctx.strokeRect(x, 16, 10, 14);
+      ctx.beginPath();
+      ctx.arc(x + 8, 30, 5, 0, Math.PI);
+      ctx.stroke();
+    }
+  } else if (sceneId === 'window') {
+    ctx.lineWidth = 3;
+    ctx.strokeRect(8, 8, width - 16, height - 16);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(13, 13, width - 26, height - 26);
+  } else if (sceneId === 'poster') {
+    ctx.lineWidth = 2;
+    ctx.strokeRect(6, 6, width - 12, height - 12);
+    ctx.font = 'italic 700 9px "Playfair Display", Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('★ A MISTLETOE PICTURE ★', width / 2, 18);
+  }
+
+  ctx.restore();
+}
+
+export function drawLightLeak(ctx, width, height) {
+  ctx.save();
+  const grad = ctx.createRadialGradient(width * 0.12, height * 0.22, 8, width * 0.12, height * 0.22, width * 0.55);
+  grad.addColorStop(0, 'rgba(237, 235, 230, 0.28)');
+  grad.addColorStop(0.5, 'rgba(181, 179, 174, 0.1)');
+  grad.addColorStop(1, 'rgba(237, 235, 230, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+}
+

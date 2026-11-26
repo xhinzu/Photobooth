@@ -56,6 +56,10 @@ export function createDefaultEdits(layout = 'single', filter = null, themeId = l
       captionFont: theme.caption.font || 'mono',
       showDate: true,
       showBranding: true,
+      sceneFrame: 'none',
+      lightLeak: false,
+      titleCardExport: false,
+      customBgId: null,
     },
     perPhoto: {},
     overlays: [],
@@ -64,6 +68,14 @@ export function createDefaultEdits(layout = 'single', filter = null, themeId = l
 }
 
 const initialThemeId = loadSavedThemeId();
+const loadFilmMode = () => {
+  try {
+    const v = localStorage.getItem('mistletoe_film_mode');
+    return v === null ? true : v === 'true';
+  } catch {
+    return true;
+  }
+};
 
 export const state = {
   screen: 'booth',
@@ -73,6 +85,8 @@ export const state = {
     timerSeconds: 3,
     preFilter: getThemeById(initialThemeId).defaults.filter,
     themeId: initialThemeId,
+    filmMode: loadFilmMode(),
+    matchFilmLook: true,
     facingMode: 'user',
     mirrored: true,
     soundEnabled: true,

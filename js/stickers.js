@@ -75,6 +75,28 @@ function openStickerDB() {
 }
 
 export async function loadCustomStickers() {
+  const loaded = [];
+  // 1. Load user-supplied images from /assets/custom/manifest.json
+  try {
+    const res = await fetch('./assets/custom/manifest.json', { cache: 'no-store' });
+    if (res.ok) {
+      const json = await res.json();
+      if (Array.isArray(json.images)) {
+        for (const filename of json.images) {
+          loaded.push({
+            id: `folder_${filename}`,
+            label: filename.replace(/\.[^.]+$/, '').slice(0, 18),
+            dataUrl: `./assets/custom/${filename}`,
+            fromFolder: true,
+          });
+        }
+      }
+    }
+  } catch {
+    // Ignore missing manifest
+  }
+
+  // 2. Load runtime uploads from IndexedDB
   try {
     const db = await openStickerDB();
     const tx = db.transaction(IDB_STORE, 'readonly');
@@ -84,11 +106,32 @@ export async function loadCustomStickers() {
       req.onsuccess = () => resolve(req.result || []);
       req.onerror = () => reject(req.error);
     });
-    customStickersCache = items;
-    return items;
+    loaded.push(...items);
   } catch {
-    return [];
+    // Ignore IDB errors
   }
+
+  customStickersCache = loaded;
+  return loaded;
+}
+
+export function processImageToFilmBW(img, threshold = 128) {
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth || img.width || 160;
+  c.height = img.naturalHeight || img.height || 160;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0, c.width, c.height);
+  const imgData = ctx.getImageData(0, 0, c.width, c.height);
+  const d = imgData.data;
+  const factor = 1.35;
+  const bias = (128 - threshold) * 0.6;
+  for (let i = 0; i < d.length; i += 4) {
+    const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    const v = Math.max(0, Math.min(255, (gray - 128) * factor + 128 + bias));
+    d[i] = d[i + 1] = d[i + 2] = v;
+  }
+  ctx.putImageData(imgData, 0, 0);
+  return c;
 }
 
 export function getCustomStickers() {
@@ -126,8 +169,8 @@ export async function saveCustomStickerFile(file) {
 }
 
 /* ---------- Die-Cut White Outline Sticker Cache ---------- */
-export async function loadStickerImage(id, colorOverride = null, dieCut = true) {
-  const key = `${id}__${colorOverride || 'default'}__${dieCut ? 'dc' : 'raw'}`;
+export async function loadStickerImage(id, colorOverride = null, dieCut = true, matchFilmLook = false) {
+  const key = `${id}__${colorOverride || 'default'}__${dieCut ? 'dc' : 'raw'}__${matchFilmLook ? 'bw' : 'col'}`;
   if (bitmapCache.has(key)) return bitmapCache.get(key);
 
   let rawImg = null;
@@ -135,6 +178,9 @@ export async function loadStickerImage(id, colorOverride = null, dieCut = true) 
 
   if (custom) {
     rawImg = await loadImgFromSrc(custom.dataUrl);
+    if (rawImg && matchFilmLook) {
+      rawImg = processImageToFilmBW(rawImg);
+    }
   } else {
     const svgStr = renderStickerSvg(id, colorOverride);
     if (!svgStr) return null;

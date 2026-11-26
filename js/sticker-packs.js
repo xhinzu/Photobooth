@@ -14,6 +14,7 @@ const PALETTES = {
   words: ['#161412', '#B53D2A', '#2A7B7B', '#6A3049', '#3A5A40'],
   party: ['#B53D2A', '#D49A2A', '#3A7BD5', '#C95B7A', '#3A5A40'],
   props: ['#161412', '#B53D2A', '#C95B7A', '#D49A2A', '#3A7BD5'],
+  scoundrel: ['#EDEBE6', '#8A8985', '#0B0B0C', '#FFFFFF'],
 };
 
 const s = (body, sw = 3, vb = '0 0 100 100') =>
@@ -23,6 +24,35 @@ const badge = (text, bg = '{{C}}', fg = '#FFFDF9', rx = 20, font = 'IBM Plex Mon
   s(`<rect x="6" y="16" width="148" height="40" rx="${rx}" fill="${bg}" stroke="#161412" stroke-width="3"/><text x="80" y="42" text-anchor="middle" font-family="${font}" font-weight="700" font-size="${fs}" fill="${fg}">${text}</text>`, 3, '0 0 160 72');
 
 export const STICKER_PACKS = [
+  {
+    id: 'scoundrel',
+    name: 'The Scoundrel',
+    colors: PALETTES.scoundrel,
+    iconSvg: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 10c1-4 3-6 5-6s4 2 5 6M5.5 8.5l1.5.7M10.5 8.5L9 9.2M5 11.5c1.5 1.5 4.5 1.5 6 0"/></svg>`,
+    stickers: [
+      { id: 'sc-peeking', label: 'Peeking Grump', svg: s(`<path d="M22 86c2-24 10-40 28-40s26 16 28 40H22z" fill="#0B0B0C" stroke="{{C}}" stroke-width="3"/><path d="M34 46c-4-12 4-22 14-24l18 6-6 18" fill="{{C}}" stroke="#0B0B0C" stroke-width="2.5"/><path d="M36 62l10 4M64 62l-10 4" stroke="{{C}}" stroke-width="2.8"/><path d="M34 74c8 7 24 7 32 0" stroke="{{C}}" stroke-width="2.8"/><path d="M28 70l6-4m32 4l-6-4" stroke="#7A7976" stroke-width="1.8"/>`) },
+      { id: 'sc-sneaking', label: 'Sneaking Grump', svg: s(`<path d="M38 30c-8 4-12 16-8 26l-10 24h12l8-16 14 16h12L54 54c4-12 0-24-16-24z" fill="#0B0B0C" stroke="{{C}}" stroke-width="2.8"/><path d="M32 32l18-14 6 12" fill="{{C}}" stroke="#0B0B0C" stroke-width="2.5"/><path d="M40 42l8 3M36 48c4 4 10 4 14 0" stroke="{{C}}" stroke-width="2.2"/>`) },
+      { id: 'sc-smirking', label: 'Smirking Portrait', svg: s(`<ellipse cx="50" cy="54" rx="24" ry="28" fill="#0B0B0C" stroke="{{C}}" stroke-width="3"/><path d="M34 32c6-12 24-16 34-6l-8 10" fill="{{C}}" stroke="#0B0B0C" stroke-width="2.5"/><path d="M36 46l10 5M64 46l-10 5" stroke="{{C}}" stroke-width="2.8"/><path d="M34 64c8 8 24 6 30-4" stroke="{{C}}" stroke-width="3"/><path d="M34 56l4 4m24-4l-4 4" stroke="#7A7976" stroke-width="1.6"/>`) },
+      { id: 'sc-shrugging', label: 'Shrugging Grump', svg: s(`<circle cx="50" cy="36" r="16" fill="#0B0B0C" stroke="{{C}}" stroke-width="2.8"/><path d="M22 52c8 12 14 14 18 10v22h20V62c4 4 10 2 18-10" fill="#0B0B0C" stroke="{{C}}" stroke-width="2.8"/><path d="M42 32l6 3M58 32l-6 3M42 42c4 3 12 3 16 0" stroke="{{C}}" stroke-width="2.2"/>`) },
+      { id: 'sc-sack', label: 'Stolen Sack', svg: s(`<path d="M36 28h28l-6 12c14 8 22 22 18 38-3 10-49 10-52 0-4-16 4-30 18-38l-6-12z" fill="#0B0B0C" stroke="{{C}}" stroke-width="3"/><path d="M36 58l14 10m-4-18l18 12M40 70l22-8" stroke="#7A7976" stroke-width="1.8"/><path d="M40 38h20" stroke="{{C}}" stroke-width="3"/>`) },
+      { id: 'sc-dog', label: 'Scruffy Dog', svg: s(`<ellipse cx="48" cy="60" rx="22" ry="15" fill="#0B0B0C" stroke="{{C}}" stroke-width="2.8"/><circle cx="68" cy="46" r="12" fill="#0B0B0C" stroke="{{C}}" stroke-width="2.8"/><path d="M68 34l4-16M72 24l8-4M30 72v14M44 74v12M62 72v14" stroke="{{C}}" stroke-width="2.8"/><circle cx="72" cy="44" r="2" fill="{{C}}"/>`) },
+      { id: 'sc-chimney', label: 'Chimney & Sack', svg: s(`<rect x="26" y="42" width="48" height="44" fill="#0B0B0C" stroke="{{C}}" stroke-width="3"/><path d="M22 42h56M26 56h48M26 70h48M42 42v14M58 56v14M42 70v16" stroke="#7A7976" stroke-width="2"/><path d="M38 42c-4-16 6-26 16-24 10 2 14 14 10 24" fill="{{C}}" stroke="#0B0B0C" stroke-width="2.5"/>`) },
+      { id: 'sc-footprints', label: 'Snow Footprints', svg: s(`<ellipse cx="34" cy="70" rx="8" ry="14" transform="rotate(-12 34 70)" fill="{{C}}" stroke="#0B0B0C" stroke-width="2"/><ellipse cx="64" cy="46" rx="8" ry="14" transform="rotate(-8 64 46)" fill="{{C}}" stroke="#0B0B0C" stroke-width="2"/><ellipse cx="42" cy="22" rx="7" ry="12" transform="rotate(-15 42 22)" fill="{{C}}" stroke="#0B0B0C" stroke-width="2"/>`) },
+      { id: 'sc-moon', label: 'Cracked-Grin Moon', svg: s(`<path d="M62 16c-20 4-32 24-27 45 4 16 18 26 34 25-14-5-21-19-18-35 3-14 12-26 24-31-4-3-8-4-13-4z" fill="{{C}}" stroke="#0B0B0C" stroke-width="3"/><path d="M40 44l8 4M36 58c6 6 14 6 20 2" stroke="#0B0B0C" stroke-width="2.4"/>`) },
+      { id: 'sc-tree', label: 'Lopsided Tree', svg: s(`<path d="M54 14L24 44h16L18 68h58L58 44h14L54 14z" fill="#0B0B0C" stroke="{{C}}" stroke-width="2.8"/><path d="M46 68l-2 16h12l-2-16" fill="{{C}}" stroke="#0B0B0C" stroke-width="2.5"/><path d="M38 36l14 6M30 56l24 6" stroke="#7A7976" stroke-width="1.8"/>`) },
+      { id: 'sc-trail', label: 'Stolen-Present Trail', svg: s(`<rect x="14" y="60" width="22" height="20" fill="#0B0B0C" stroke="{{C}}" stroke-width="2.5"/><path d="M25 60v20M14 70h22" stroke="{{C}}" stroke-width="2"/><rect x="44" y="42" width="18" height="16" transform="rotate(-12 44 42)" fill="#0B0B0C" stroke="{{C}}" stroke-width="2.5"/><rect x="68" y="20" width="16" height="14" transform="rotate(14 68 20)" fill="#0B0B0C" stroke="{{C}}" stroke-width="2.5"/>`) },
+      { id: 'sc-bah', label: 'Bah, humbug.', svg: badge('Bah, humbug.', '#0B0B0C', '{{C}}', 4, 'Courier Prime, monospace', 15) },
+      { id: 'sc-mine', label: 'Mine.', svg: badge('Mine.', '{{C}}', '#0B0B0C', 20, 'Playfair Display, serif', 19) },
+      { id: 'sc-not-today', label: 'Not today, Christmas.', svg: badge('Not today, Christmas.', '#0B0B0C', '{{C}}', 4, 'Courier Prime, monospace', 11) },
+      { id: 'sc-nice-try', label: 'Nice try.', svg: badge('Nice try.', '{{C}}', '#0B0B0C', 6, 'Courier Prime, monospace', 17) },
+      { id: 'sc-cancelled', label: 'Cancelled.', svg: badge('CANCELLED.', '#0B0B0C', '{{C}}', 4, 'Playfair Display, serif', 16) },
+      { id: 'sc-wink', label: 'Wink.', svg: badge('Wink.', '{{C}}', '#0B0B0C', 20, 'Courier Prime, monospace', 18) },
+      { id: 'sc-brows', label: 'Sly Eyebrows', isFaceProp: 'eyes', svg: s(`<path d="M12 44c12-12 24-10 32 0M56 44c8-10 20-12 32 0" stroke="{{C}}" stroke-width="6"/><path d="M18 40l4 4m58-4l-4 4" stroke="#7A7976" stroke-width="2"/>`) },
+      { id: 'sc-grin', label: 'Wide Grin', isFaceProp: 'mouth', svg: s(`<path d="M14 44c18 22 54 22 72 0-16 10-56 10-72 0z" fill="{{C}}" stroke="#0B0B0C" stroke-width="3"/><path d="M30 51v8M42 54v8M58 54v8M70 51v8" stroke="#0B0B0C" stroke-width="2"/>`) },
+      { id: 'sc-hat', label: 'Droopy Santa Hat', isFaceProp: 'head', svg: s(`<path d="M18 68c8-32 28-46 52-40 10 3 14 14 8 24l-8 16H18z" fill="#0B0B0C" stroke="{{C}}" stroke-width="3"/><rect x="14" y="64" width="60" height="14" rx="7" fill="{{C}}" stroke="#0B0B0C" stroke-width="2.8"/><circle cx="80" cy="48" r="7" fill="{{C}}" stroke="#0B0B0C" stroke-width="2.5"/>`) },
+      { id: 'sc-whiskers', label: 'Shaggy Whiskers', isFaceProp: 'cheeks', svg: s(`<path d="M10 38l16 8-12 8 14 8M90 38l-16 8 12 8-14 8" stroke="{{C}}" stroke-width="4.5"/>`) },
+    ],
+  },
   {
     id: 'classics',
     name: 'Classics',
@@ -245,3 +275,4 @@ export function renderStickerSvg(stickerId, colorOverride = null) {
   const color = colorOverride || def.colors[0] || '#B53D2A';
   return def.svg.replaceAll('{{C}}', color);
 }
+
