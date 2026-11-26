@@ -1,0 +1,37 @@
+# Mistletoe Photobooth
+
+An analog-inspired, editorial web photobooth built with plain HTML, CSS, and vanilla JavaScript. All image capture, film emulation, sticker compositing, and strip printing happen locally in your browser—nothing is ever uploaded.
+
+## Features
+
+- **Flexible Strip Formats:** 1, 2, 3, 4, 6, or 8 poses in Single Strip, Double Strip, 2×2 Grid, or 2×3 Grid layouts.
+- **Studio Capture Flow:** Configurable 3s / 5s / 10s countdown, front/back camera switching, mirror toggle, pause/cancel, and last-shot retake.
+- **Mechanical Print Animation:** Analog printer slot reveal with optional synthesized shutter and print audio.
+- **Non-Destructive Canvas Editor:**
+  - **8 Film & Tone Filters:** Color, B&W, High-Contrast B&W, Sepia, Warm Film, Cool Film, Faded, Vintage Fade.
+  - **Fine Adjustments:** Brightness, Contrast, Saturation, Warmth, Film Grain, Vignette, Softness/Blur, and Sharpness.
+  - **Per-Photo Controls:** Select any frame on the strip to adjust its filter, zoom/crop, flip, or retake just that pose.
+  - **Frame Customization:** Curated studio paper swatches + custom color, border thickness, corner radius, layout switcher, bottom caption with 3 font choices, date stamp, and studio mark.
+  - **Hand-Drawn SVG Stickers, Pen & Text:** Tabbed sticker library with drag, scale, rotate, layer ordering, duplicate, freehand drawing/eraser, and custom text labels.
+  - **Undo / Redo:** Full history stack (`Ctrl+Z` / `Ctrl+Shift+Z` or on-screen controls).
+- **Export & Share:** High-res PNG (3×), JPG, animated buildup GIF, Clipboard copy, and Web Share API integration for mobile WhatsApp & Instagram.
+- **Offline Ready:** Includes a PWA manifest and service worker for home-screen installation.
+
+## Running Locally
+
+> **Important:** Browser `getUserMedia` camera access requires a **secure context** (`https://` or `http://localhost` / `http://127.0.0.1`). Opening `index.html` directly via `file://` will block camera access and ES modules.
+
+Start any static HTTP server from the project root:
+
+```bash
+# Using Python
+python -m http.server 8080
+
+# Or using Node.js
+npx serve -l 8080
+```
+
+Then open [http://localhost:8080](http://localhost:8080) in your browser.
+
+To test on a mobile device over your local network, serve over HTTPS (e.g., via a local TLS proxy or tunnel) so `getUserMedia` and `navigator.share` are available.
+

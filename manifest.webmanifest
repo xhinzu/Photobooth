@@ -1,0 +1,19 @@
+{
+  "name": "Mistletoe Photobooth",
+  "short_name": "Mistletoe",
+  "description": "Warm, analog-inspired studio photobooth. Capture, edit, decorate, and print photo strips locally in your browser.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F6E9DC",
+  "theme_color": "#F6E9DC",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

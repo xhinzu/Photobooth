@@ -1,0 +1,243 @@
+.app-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-hairline);
+  background-color: var(--bg-cream);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.privacy-pill {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.editor-history-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-right: var(--space-2);
+  border-right: 1px solid var(--border-hairline);
+}
+
+/* Views */
+.view {
+  flex: 1;
+  width: 100%;
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+/* Booth Grid (Desktop >=1024px: Two columns) */
+.booth-grid {
+  display: grid;
+  grid-template-columns: minmax(340px, 440px) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.booth-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.booth-stage {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.camera-frame-outer {
+  width: 100%;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Mobile bottom bar hidden on desktop/tablet */
+.mobile-bottom-bar {
+  display: none;
+}
+
+/* Printing View */
+.view-printing {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: var(--space-5);
+}
+
+.printer-stage {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* Editor Layout (Desktop >=1024px: Two columns) */
+.editor-layout {
+  display: grid;
+  grid-template-columns: minmax(340px, 440px) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.editor-tools-col {
+  order: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.editor-stage-col {
+  order: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Tablet (768px - 1023px) */
+@media (max-width: 1023px) {
+  .booth-grid {
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+
+  .editor-layout {
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+
+  .privacy-pill {
+    display: none;
+  }
+}
+
+/* Mobile (<768px) */
+@media (max-width: 767px) {
+  .site-header {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .brand-name {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+  }
+
+  .view {
+    padding: var(--space-3) var(--space-3) calc(92px + env(safe-area-inset-bottom));
+  }
+
+  .booth-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .booth-sidebar {
+    gap: var(--space-3);
+  }
+
+  .desktop-start-wrap {
+    display: none;
+  }
+
+  /* When setup-panel is inside mobile sheet, show it cleanly; hide inline on mobile */
+  .booth-sidebar > .setup-panel {
+    display: none;
+  }
+
+  .mobile-bottom-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 45;
+    padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom));
+    background: var(--bg-cream);
+    border-top: 1px solid var(--border-hairline);
+  }
+
+  .mobile-start-btn {
+    flex: 1;
+  }
+
+  /* Editor mobile: Strip on top, horizontally scrollable tool tray below */
+  .editor-layout {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .editor-stage-col {
+    order: 1;
+  }
+
+  .editor-tools-col {
+    order: 2;
+  }
+}
+

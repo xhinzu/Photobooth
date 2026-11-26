@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Mistletoe Photobooth — Analog Studio Print</title>
+  <meta name="description" content="Warm, analog-inspired studio photobooth. Capture, edit, decorate, and print photo strips locally in your browser with zero uploads." />
+  <meta name="theme-color" content="#F6E9DC" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Mistletoe Photobooth" />
+  <meta property="og:description" content="Capture, edit, and print analog-style photo strips directly in your browser. 100% local and private." />
+  <meta property="og:type" content="website" />
+
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+
+  <!-- Google Fonts: Anton (Condensed Display), DM Sans (UI/Body), IBM Plex Mono (Technical/Captions) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./css/tokens.css" />
+  <link rel="stylesheet" href="./css/layout.css" />
+  <link rel="stylesheet" href="./css/components.css" />
+</head>
+<body>
+  <!-- Subtle SVG paper grain overlay -->
+  <svg class="grain-svg" aria-hidden="true" width="0" height="0">
+    <filter id="paper-grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
+      <feColorMatrix type="saturate" values="0" />
+    </filter>
+  </svg>
+  <div class="paper-grain-layer" aria-hidden="true"></div>
+
+  <div class="app-shell">
+    <!-- Top Editorial Header -->
+    <header class="site-header">
+      <div class="header-left">
+        <a href="#top" class="brand-mark" id="brand-home" aria-label="Mistletoe Photobooth Home">
+          <span class="brand-dot" aria-hidden="true"></span>
+          <span class="brand-name">MISTLETOE PHOTOBOOTH</span>
+        </a>
+        <span class="privacy-pill" title="All processing happens locally in your browser">
+          LOCAL ONLY &middot; NO UPLOADS
+        </span>
+      </div>
+
+      <div class="header-actions">
+        <div class="editor-history-controls" id="header-history" hidden>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-undo" aria-label="Undo (Ctrl+Z)" disabled>
+            Undo
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-redo" aria-label="Redo (Ctrl+Shift+Z)" disabled>
+            Redo
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-reset-edits" aria-label="Reset all edits">
+            Reset
+          </button>
+        </div>
+
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-sound-toggle" aria-pressed="false" aria-label="Toggle shutter sound">
+          Sound: On
+        </button>
+      </div>
+    </header>
+
+    <!-- SCREEN 1 & 2: LANDING / SETUP & CAPTURE -->
+    <main class="view view-booth" id="view-booth" aria-label="Photobooth Setup and Capture">
+      <div class="booth-grid">
+        <!-- Left Column (Desktop) / Settings Sheet (Mobile) -->
+        <section class="booth-sidebar" aria-label="Session Settings">
+          <div class="editorial-intro">
+            <p class="eyebrow">STUDIO EDITION &middot; NO. 04</p>
+            <h1 class="hero-headline" id="setup-headline">4 POSES / 1 STRIP</h1>
+            <p class="hero-subcopy" id="setup-subcopy">
+              Hold still. Or don't. Every frame is developed locally in your browser.
+            </p>
+          </div>
+
+          <!-- Setup Controls -->
+          <div class="setup-panel" id="setup-panel">
+            <div class="control-group">
+              <div class="control-header">
+                <label class="control-label" id="label-pose-count">POSES</label>
+                <span class="control-hint" id="hint-pose-count">4 frames</span>
+              </div>
+              <div class="segmented-control" role="radiogroup" aria-labelledby="label-pose-count" id="pose-count-group">
+                <button type="button" class="seg-btn" role="radio" aria-checked="false" data-count="1">1</button>
+                <button type="button" class="seg-btn" role="radio" aria-checked="false" data-count="2">2</button>
+                <button type="button" class="seg-btn" role="radio" aria-checked="false" data-count="3">3</button>
+                <button type="button" class="seg-btn is-active" role="radio" aria-checked="true" data-count="4">4</button>
+                <button type="button" class="seg-btn" role="radio" aria-checked="false" data-count="6">6</button>
+                <button type="button" class="seg-btn" role="radio" aria-checked="false" data-count="8">8</button>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <div class="control-header">
+                <label class="control-label" id="label-layout">STRIP LAYOUT</label>
+              </div>
+              <div class="layout-grid" role="radiogroup" aria-labelledby="label-layout" id="layout-group">
+                <button type="button" class="layout-btn is-active" role="radio" aria-checked="true" data-layout="single">
+                  <span class="layout-glyph layout-glyph-single" aria-hidden="true"></span>
+                  <span>Single Strip</span>
+                </button>
+                <button type="button" class="layout-btn" role="radio" aria-checked="false" data-layout="double">
+                  <span class="layout-glyph layout-glyph-double" aria-hidden="true"></span>
+                  <span>2 Strips</span>
+                </button>
+                <button type="button" class="layout-btn" role="radio" aria-checked="false" data-layout="grid-2x2">
+                  <span class="layout-glyph layout-glyph-2x2" aria-hidden="true"></span>
+                  <span>2&times;2 Grid</span>
+                </button>
+                <button type="button" class="layout-btn" role="radio" aria-checked="false" data-layout="grid-2x3">
+                  <span class="layout-glyph layout-glyph-2x3" aria-hidden="true"></span>
+                  <span>2&times;3 Grid</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="control-row-split">
+              <div class="control-group">
+                <label class="control-label" id="label-timer">TIMER</label>
+                <div class="segmented-control" role="radiogroup" aria-labelledby="label-timer" id="timer-group">
+                  <button type="button" class="seg-btn is-active" role="radio" aria-checked="true" data-timer="3">3s</button>
+                  <button type="button" class="seg-btn" role="radio" aria-checked="false" data-timer="5">5s</button>
+                  <button type="button" class="seg-btn" role="radio" aria-checked="false" data-timer="10">10s</button>
+                </div>
+              </div>
+
+              <div class="control-group">
+                <label class="control-label" id="label-camera-opts">LENS &amp; MIRROR</label>
+                <div class="toggle-pair">
+                  <button type="button" class="pill-toggle" id="btn-facing-toggle" aria-pressed="false" title="Switch front or back camera">
+                    Front
+                  </button>
+                  <button type="button" class="pill-toggle is-active" id="btn-mirror-toggle" aria-pressed="true" title="Mirror camera preview">
+                    Mirror: On
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label class="control-label" id="label-pre-filter">FILM STOCK</label>
+              <div class="chip-row" role="radiogroup" aria-labelledby="label-pre-filter" id="pre-filter-group">
+                <button type="button" class="chip-btn is-active" role="radio" aria-checked="true" data-filter="bw">B&amp;W</button>
+                <button type="button" class="chip-btn" role="radio" aria-checked="false" data-filter="sepia">Sepia</button>
+                <button type="button" class="chip-btn" role="radio" aria-checked="false" data-filter="warm">Warm Film</button>
+                <button type="button" class="chip-btn" role="radio" aria-checked="false" data-filter="cool">Cool Film</button>
+                <button type="button" class="chip-btn" role="radio" aria-checked="false" data-filter="color">Color</button>
+              </div>
+            </div>
+
+            <div class="desktop-start-wrap">
+              <button type="button" class="btn btn-primary btn-lg btn-block" id="btn-start-session">
+                Start Session
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Capture Controls (hidden until capture starts) -->
+          <div class="capture-panel" id="capture-panel" hidden>
+            <div class="control-group">
+              <div class="control-header">
+                <span class="control-label">CAPTURE PROGRESS</span>
+                <span class="control-hint" id="capture-status-label">Preparing...</span>
+              </div>
+              <div class="pose-progress-boxes" id="pose-progress-boxes" aria-label="Captured poses"></div>
+            </div>
+
+            <div class="capture-actions-stack">
+              <div class="capture-actions-row">
+                <button type="button" class="btn btn-secondary" id="btn-pause-capture">
+                  Pause
+                </button>
+                <button type="button" class="btn btn-secondary" id="btn-retake-last" disabled>
+                  Retake Last
+                </button>
+              </div>
+              <button type="button" class="btn btn-ghost" id="btn-cancel-capture">
+                Cancel Session
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right Column (Desktop) / Main Stage (Mobile) -->
+        <section class="booth-stage" aria-label="Camera Preview">
+          <div class="camera-frame-outer">
+            <div class="scalloped-frame">
+              <div class="camera-viewport" id="camera-viewport">
+                <video id="camera-video" autoplay playsinline muted aria-label="Live camera preview"></video>
+
+                <!-- Countdown Overlay -->
+                <div class="countdown-overlay" id="countdown-overlay" aria-live="polite" aria-atomic="true">
+                  <span class="countdown-number" id="countdown-number"></span>
+                </div>
+
+                <!-- Shutter Flash -->
+                <div class="shutter-flash" id="shutter-flash" aria-hidden="true"></div>
+
+                <!-- Single-shot retake banner -->
+                <div class="retake-banner" id="retake-banner" hidden>
+                  RETAKING POSE <span id="retake-pose-num">1</span>
+                </div>
+
+                <!-- Camera Loading / Error / Permission Denied State -->
+                <div class="camera-state" id="camera-state" hidden>
+                  <div class="camera-state-card">
+                    <p class="eyebrow" id="camera-state-eyebrow">CAMERA ACCESS</p>
+                    <h2 class="camera-state-title" id="camera-state-title">Waiting for lens...</h2>
+                    <p class="camera-state-desc" id="camera-state-desc">
+                      Allow camera permission in your browser to start shooting.
+                    </p>
+                    <div class="camera-state-actions">
+                      <button type="button" class="btn btn-primary btn-sm" id="btn-retry-camera">
+                        Retry Camera
+                      </button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="btn-demo-frames">
+                        Use Studio Test Frames
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="camera-caption-bar">
+              <span class="mono-meta" id="camera-counter">0 / 4</span>
+              <span class="mono-meta">MISTLETOE STUDIO &middot; 1280&times;960</span>
+              <span class="mono-meta" id="camera-filter-badge">B&amp;W</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Mobile Sticky Bottom Bar + Settings Sheet Trigger -->
+      <div class="mobile-bottom-bar" id="mobile-bottom-bar">
+        <button type="button" class="btn btn-secondary" id="btn-mobile-settings" aria-expanded="false" aria-controls="mobile-sheet-backdrop">
+          Settings
+        </button>
+        <button type="button" class="btn btn-primary btn-lg mobile-start-btn" id="btn-mobile-start">
+          Start Session
+        </button>
+      </div>
+
+      <!-- Mobile Bottom Sheet Backdrop -->
+      <div class="mobile-sheet-backdrop" id="mobile-sheet-backdrop" hidden>
+        <div class="mobile-sheet" id="mobile-sheet" role="dialog" aria-modal="true" aria-label="Booth Settings">
+          <div class="mobile-sheet-handle" aria-hidden="true"></div>
+          <div class="mobile-sheet-header">
+            <span class="control-label">SESSION SETTINGS</span>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-close-sheet">Done</button>
+          </div>
+          <div class="mobile-sheet-body" id="mobile-sheet-body">
+            <!-- Setup panel moves here on mobile <768px via CSS/JS -->
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- SCREEN 3: PRINTING ANIMATION -->
+    <section class="view view-printing" id="view-printing" hidden aria-label="Printing Photo Strip">
+      <div class="printer-stage">
+        <div class="printer-housing">
+          <div class="printer-header">
+            <span class="eyebrow">ANALOG THERMAL PRINT</span>
+            <span class="printer-led" aria-hidden="true"></span>
+          </div>
+          <div class="printer-slot">
+            <div class="printer-slit" aria-hidden="true"></div>
+            <div class="printed-strip-chute" id="printed-strip-chute">
+              <img id="printing-preview-img" alt="Printing photo strip" />
+            </div>
+          </div>
+        </div>
+        <p class="printing-status" id="printing-status" aria-live="polite">
+          Developing &amp; printing your strip...
+        </p>
+      </div>
+    </section>
+
+    <!-- SCREEN 4: RESULT + EDITOR -->
+    <section class="view view-editor" id="view-editor" hidden aria-label="Photo Strip Editor">
+      <div class="editor-layout">
+        <!-- Strip Preview Stage (Right on Desktop, Top on Mobile) -->
+        <div class="editor-stage-col">
+          <div class="strip-stage" id="strip-stage">
+            <div class="strip-paper-wrap" id="strip-paper-wrap">
+              <canvas id="strip-canvas" aria-label="Edited photo strip preview"></canvas>
+              <!-- Interactive overlay for stickers, text, drawing, and per-photo tap selection -->
+              <div class="strip-overlay" id="strip-overlay"></div>
+            </div>
+          </div>
+
+          <!-- Contextual Selection Bar (for active sticker/text or active photo) -->
+          <div class="selection-bar" id="selection-bar" hidden>
+            <div class="selection-bar-info" id="selection-bar-info">Item selected</div>
+            <div class="selection-bar-actions" id="selection-bar-actions"></div>
+          </div>
+
+          <!-- Primary Export & Share Bar -->
+          <div class="export-bar">
+            <button type="button" class="btn btn-secondary" id="btn-take-again">
+              Take Again
+            </button>
+            <div class="export-primary-group">
+              <div class="dropdown-wrap">
+                <button type="button" class="btn btn-primary" id="btn-download-menu" aria-expanded="false" aria-haspopup="true">
+                  Download
+                </button>
+                <div class="dropdown-menu" id="download-menu" role="menu" hidden>
+                  <button type="button" class="dropdown-item" role="menuitem" id="btn-dl-png">
+                    <span>High-Res PNG (3&times;)</span>
+                    <span class="mono-meta">BEST</span>
+                  </button>
+                  <button type="button" class="dropdown-item" role="menuitem" id="btn-dl-jpg">
+                    <span>Standard JPG</span>
+                    <span class="mono-meta">COMPACT</span>
+                  </button>
+                  <button type="button" class="dropdown-item" role="menuitem" id="btn-dl-gif">
+                    <span>Animated Buildup GIF</span>
+                    <span class="mono-meta">LOOP</span>
+                  </button>
+                  <button type="button" class="dropdown-item" role="menuitem" id="btn-copy-clipboard">
+                    <span>Copy Image</span>
+                    <span class="mono-meta">CLIPBOARD</span>
+                  </button>
+                </div>
+              </div>
+
+              <button type="button" class="btn btn-accent" id="btn-share-native">
+                Share
+              </button>
+            </div>
+          </div>
+
+          <!-- Direct Platform Share Row -->
+          <div class="platform-share-row">
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-share-whatsapp">
+              WhatsApp
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-share-instagram">
+              Instagram
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-share-qr">
+              Phone Transfer / QR
+            </button>
+          </div>
+        </div>
+
+        <!-- Editor Tools Panel (Left on Desktop, Bottom Tray on Mobile) -->
+        <aside class="editor-tools-col" aria-label="Editing Tools">
+          <div class="editor-tabs" role="tablist" aria-label="Editor categories" id="editor-tabs">
+            <button type="button" class="tab-btn is-active" role="tab" aria-selected="true" data-tab="filters">Filters</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="adjust">Adjust</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="frame">Frame</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="stickers">Stickers</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="draw">Draw &amp; Text</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="photo">Per-Photo</button>
+          </div>
+
+          <div class="editor-panels">
+            <!-- TAB 1: FILTERS -->
+            <div class="tab-panel is-active" id="panel-filters" role="tabpanel">
+              <p class="panel-caption">Select a film stock for the entire strip. Tap any individual photo on the strip to override it.</p>
+              <div class="filter-grid" id="editor-filter-grid"></div>
+            </div>
+
+            <!-- TAB 2: ADJUSTMENTS -->
+            <div class="tab-panel" id="panel-adjust" role="tabpanel" hidden>
+              <div class="slider-list" id="adjust-sliders"></div>
+            </div>
+
+            <!-- TAB 3: FRAME & CAPTION -->
+            <div class="tab-panel" id="panel-frame" role="tabpanel" hidden>
+              <div class="control-group">
+                <label class="control-label">LAYOUT</label>
+                <div class="layout-grid compact" id="editor-layout-group">
+                  <button type="button" class="layout-btn" data-layout="single">Single</button>
+                  <button type="button" class="layout-btn" data-layout="double">2 Strips</button>
+                  <button type="button" class="layout-btn" data-layout="grid-2x2">2&times;2</button>
+                  <button type="button" class="layout-btn" data-layout="grid-2x3">2&times;3</button>
+                </div>
+              </div>
+
+              <div class="control-group">
+                <label class="control-label">PAPER COLOR</label>
+                <div class="swatch-row" id="paper-swatches"></div>
+              </div>
+
+              <div class="slider-pair">
+                <div class="slider-item">
+                  <div class="slider-header">
+                    <label for="slider-border">BORDER</label>
+                    <span class="mono-meta" id="val-border">18px</span>
+                  </div>
+                  <input type="range" id="slider-border" min="8" max="40" value="18" />
+                </div>
+                <div class="slider-item">
+                  <div class="slider-header">
+                    <label for="slider-radius">CORNERS</label>
+                    <span class="mono-meta" id="val-radius">2px</span>
+                  </div>
+                  <input type="range" id="slider-radius" min="0" max="24" value="2" />
+                </div>
+              </div>
+
+              <div class="control-group">
+                <label class="control-label" for="input-caption">STRIP CAPTION</label>
+                <input type="text" id="input-caption" class="text-input" maxlength="42" placeholder="e.g. Late Night Studio" />
+              </div>
+
+              <div class="control-group">
+                <label class="control-label">CAPTION FONT</label>
+                <div class="segmented-control" id="caption-font-group">
+                  <button type="button" class="seg-btn is-active" data-font="mono">Mono</button>
+                  <button type="button" class="seg-btn" data-font="sans">Sans</button>
+                  <button type="button" class="seg-btn" data-font="display">Display</button>
+                </div>
+              </div>
+
+              <div class="toggle-pair">
+                <button type="button" class="pill-toggle is-active" id="btn-date-stamp" aria-pressed="true">
+                  Date Stamp: On
+                </button>
+                <button type="button" class="pill-toggle is-active" id="btn-branding-line" aria-pressed="true">
+                  Studio Mark: On
+                </button>
+              </div>
+            </div>
+
+            <!-- TAB 4: STICKERS -->
+            <div class="tab-panel" id="panel-stickers" role="tabpanel" hidden>
+              <div class="sticker-cat-tabs" id="sticker-cat-tabs" role="tablist"></div>
+              <div class="sticker-grid" id="sticker-grid"></div>
+              <p class="panel-caption">Click or tap a sticker to place it on the strip. Drag to move, use corner handle or pinch to scale &amp; rotate.</p>
+            </div>
+
+            <!-- TAB 5: DRAW & TEXT -->
+            <div class="tab-panel" id="panel-draw" role="tabpanel" hidden>
+              <div class="control-group">
+                <div class="control-header">
+                  <label class="control-label">FREEHAND PEN</label>
+                  <button type="button" class="pill-toggle" id="btn-draw-mode" aria-pressed="false">
+                    Pen: Off
+                  </button>
+                </div>
+                <div class="draw-controls">
+                  <div class="swatch-row small" id="pen-colors"></div>
+                  <div class="slider-item">
+                    <div class="slider-header">
+                      <label for="slider-pen-size">SIZE</label>
+                      <span class="mono-meta" id="val-pen-size">4px</span>
+                    </div>
+                    <input type="range" id="slider-pen-size" min="2" max="24" value="4" />
+                  </div>
+                  <div class="toggle-pair">
+                    <button type="button" class="pill-toggle" id="btn-eraser-mode" aria-pressed="false">
+                      Eraser: Off
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="btn-clear-drawings">
+                      Clear Ink
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <hr class="divider" />
+
+              <div class="control-group">
+                <label class="control-label" for="input-overlay-text">ADD TEXT LABEL</label>
+                <div class="text-add-row">
+                  <input type="text" id="input-overlay-text" class="text-input" maxlength="36" placeholder="Write on strip..." />
+                  <button type="button" class="btn btn-primary btn-sm" id="btn-add-text">Add</button>
+                </div>
+                <div class="control-row-split compact">
+                  <div class="segmented-control" id="text-font-group">
+                    <button type="button" class="seg-btn is-active" data-font="sans">Sans</button>
+                    <button type="button" class="seg-btn" data-font="mono">Mono</button>
+                    <button type="button" class="seg-btn" data-font="display">Display</button>
+                  </div>
+                  <input type="color" id="input-text-color" value="#161412" aria-label="Text color" class="color-well" />
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 6: PER-PHOTO -->
+            <div class="tab-panel" id="panel-photo" role="tabpanel" hidden>
+              <div id="per-photo-empty" class="empty-note">
+                Tap or click any photo directly on the strip to customize its filter, zoom, flip, or retake just that pose.
+              </div>
+              <div id="per-photo-controls" hidden>
+                <div class="control-header">
+                  <span class="control-label" id="selected-photo-label">POSE 1 SELECTED</span>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btn-deselect-photo">Done</button>
+                </div>
+
+                <div class="control-group">
+                  <label class="control-label">POSE FILTER</label>
+                  <div class="chip-row" id="per-photo-filters"></div>
+                </div>
+
+                <div class="slider-item">
+                  <div class="slider-header">
+                    <label for="slider-photo-zoom">CROP / ZOOM</label>
+                    <span class="mono-meta" id="val-photo-zoom">1.00&times;</span>
+                  </div>
+                  <input type="range" id="slider-photo-zoom" min="100" max="200" value="100" />
+                </div>
+
+                <div class="toggle-pair">
+                  <button type="button" class="pill-toggle" id="btn-photo-flip" aria-pressed="false">
+                    Flip Horizontal
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-retake-single">
+                    Retake This Pose
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <!-- MODALS -->
+  <div class="modal-backdrop" id="modal-backdrop" hidden>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <p class="eyebrow" id="modal-eyebrow">EXPORT</p>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-modal-close" aria-label="Close dialog">Close</button>
+      </div>
+      <h2 class="modal-title" id="modal-title">Saved to device</h2>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- TOAST REGION -->
+  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="./js/ui.js"></script>
+</body>
+</html>
+

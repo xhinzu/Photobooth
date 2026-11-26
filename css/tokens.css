@@ -1,0 +1,121 @@
+:root {
+  /* Color Palette — Warm, Analog, Editorial */
+  --bg-cream: #F6E9DC;
+  --bg-cream-deep: #EEDBC9;
+  --bg-paper: #FFFDF9;
+  --bg-surface: #FBF3EB;
+  --ink: #161412;
+  --ink-muted: #5C544D;
+  --ink-subtle: #8C8279;
+  --border-hairline: rgba(22, 20, 18, 0.16);
+  --border-strong: rgba(22, 20, 18, 0.85);
+
+  /* Single Accent — Muted Terracotta / Deep Red */
+  --accent: #B53D2A;
+  --accent-hover: #962F1F;
+  --accent-soft: rgba(181, 61, 42, 0.1);
+
+  /* Typography */
+  --font-display: 'Anton', Impact, 'Arial Narrow', sans-serif;
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Spacing Scale (4 / 8 / 16 / 24 / 40 / 64) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 40px;
+  --space-6: 64px;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+
+  /* Soft Paper Shadows */
+  --shadow-paper: 0 12px 30px -10px rgba(22, 20, 18, 0.18), 0 2px 6px rgba(22, 20, 18, 0.08);
+  --shadow-strip: 0 18px 42px -12px rgba(22, 20, 18, 0.28), 0 4px 12px rgba(22, 20, 18, 0.1);
+  --shadow-sheet: 0 -10px 32px rgba(22, 20, 18, 0.16);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-mechanical: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 140ms;
+  --duration-med: 260ms;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-cream);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Subtle paper grain */
+.grain-svg {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.paper-grain-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.045;
+  filter: url(#paper-grain);
+  background: var(--ink);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+button {
+  appearance: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
