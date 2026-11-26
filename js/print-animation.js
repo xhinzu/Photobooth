@@ -36,10 +36,10 @@ function buildIrregularStepSchedule(startMs, endMs) {
   return steps;
 }
 
-function spawnDustParticle(container) {
+function spawnDustParticle(container, themeId = 'minimal') {
   if (!container) return;
   const dot = document.createElement('span');
-  dot.className = 'paper-dust';
+  dot.className = `paper-dust ${themeId === 'christmas' ? 'is-snow' : themeId === 'y2k' || themeId === 'kawaii' ? 'is-sparkle' : ''}`;
   dot.style.left = `${15 + Math.random() * 70}%`;
   dot.style.setProperty('--drift-x', `${(Math.random() - 0.5) * 26}px`);
   container.appendChild(dot);
@@ -192,8 +192,8 @@ export async function playPrintSequence(appState, dom) {
         if (stepIdx !== lastStepIndex) {
           lastStepIndex = stepIdx;
           playPrinterStepTick();
-          if (Math.random() < 0.42) {
-            spawnDustParticle(dustLayer);
+          if (Math.random() < 0.48) {
+            spawnDustParticle(dustLayer, appState.edits.themeId);
           }
         }
 
@@ -243,3 +243,4 @@ export async function playPrintSequence(appState, dom) {
     rafId = requestAnimationFrame(frame);
   });
 }
+

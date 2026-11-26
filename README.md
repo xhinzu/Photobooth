@@ -35,3 +35,55 @@ Then open [http://localhost:8080](http://localhost:8080) in your browser.
 
 To test on a mobile device over your local network, serve over HTTPS (e.g., via a local TLS proxy or tunnel) so `getUserMedia` and `navigator.share` are available.
 
+## Extending Themes & Sticker Packs
+
+Themes and sticker packs are pure data objects in `js/themes.js` and `js/sticker-packs.js`. Adding a new theme or pack requires only adding one object—no renderer code changes.
+
+### Worked Theme Example (`js/themes.js`)
+
+```js
+{
+  id: 'sunset-film',
+  name: 'Sunset Film',
+  tagline: 'Warm amber grain & rounded corners',
+  accentColor: '#C85A32',
+  accentHover: '#A34422',
+  packId: 'retro', // Auto-prioritized sticker pack
+  background: { type: 'gradient', color: '#FCE8D5', secondary: '#F5C9A8' },
+  border: { style: 'solid', color: '#C85A32', thickness: 18, radius: 8 },
+  photoFrame: {
+    shape: 'rounded',
+    tiltMaxDeg: 0,
+    shadow: true,
+    glossy: false,
+    polaroidPadBottom: 0,
+    tapeCorners: false,
+    perPhotoCaption: false,
+  },
+  defaults: {
+    filter: 'warm',
+    adjustments: { grain: 16, vignette: 14, warmth: 18 },
+  },
+  caption: { font: 'mono', color: '#3B2314', defaultText: 'golden hour' },
+  overlay: { type: 'none', layer: 'above' },
+}
+```
+
+### Worked Sticker Pack Example (`js/sticker-packs.js`)
+
+```js
+{
+  id: 'my-pack',
+  name: 'My Pack',
+  colors: ['#B53D2A', '#161412', '#D48C46', '#3A5A40'],
+  iconSvg: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5"/></svg>`,
+  stickers: [
+    {
+      id: 'my-dot',
+      label: 'Studio Dot',
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="30" fill="{{C}}" stroke="#161412" stroke-width="3"/></svg>`,
+    },
+  ],
+}
+```
+

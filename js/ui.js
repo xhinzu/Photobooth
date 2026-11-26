@@ -16,10 +16,13 @@ import {
   resetEdits,
   clearCaptures,
   createDefaultEdits,
+  applyThemeSelection,
   PAPER_SWATCHES,
   PEN_COLORS,
   DEFAULT_ADJUSTMENTS,
 } from './state.js';
+import { STRIP_THEMES, getThemeById, applyThemeToAppUI } from './themes.js';
+import { renderThemeMiniPreview } from './theme-renderer.js';
 import {
   isSoundEnabled,
   setSoundEnabled,
@@ -36,12 +39,23 @@ import {
 } from './camera.js';
 import { playPrintSequence } from './print-animation.js';
 import { FILTERS, getFilterById } from './filters.js';
-import { STICKER_CATEGORIES, STICKERS } from './stickers.js';
+import {
+  STICKER_PACKS,
+  ALL_STICKERS,
+  renderStickerSvg,
+  getRecentStickerIds,
+  getFavoriteStickerIds,
+  toggleFavoriteSticker,
+  loadCustomStickers,
+  getCustomStickers,
+  saveCustomStickerFile,
+} from './stickers.js';
 import {
   initEditor,
   scheduleRender,
   addStickerOverlay,
   addTextOverlay,
+  scatterSurpriseStickers,
 } from './editor.js';
 import {
   downloadPNG,
@@ -88,6 +102,8 @@ const els = {
   hintPoseCount: $('hint-pose-count'),
   layoutGroup: $('layout-group'),
   timerGroup: $('timer-group'),
+  setupThemeGrid: $('setup-theme-grid'),
+  btnRandomThemeSetup: $('btn-random-theme-setup'),
   preFilterGroup: $('pre-filter-group'),
   btnFacingToggle: $('btn-facing-toggle'),
   btnMirrorToggle: $('btn-mirror-toggle'),
@@ -135,6 +151,8 @@ const els = {
   selectionBarInfo: $('selection-bar-info'),
   selectionBarActions: $('selection-bar-actions'),
   editorTabs: $('editor-tabs'),
+  editorThemeGrid: $('editor-theme-grid'),
+  btnRandomThemeEditor: $('btn-random-theme-editor'),
   editorFilterGrid: $('editor-filter-grid'),
   adjustSliders: $('adjust-sliders'),
   editorLayoutGroup: $('editor-layout-group'),
@@ -149,6 +167,12 @@ const els = {
   btnBrandingLine: $('btn-branding-line'),
   stickerCatTabs: $('sticker-cat-tabs'),
   stickerGrid: $('sticker-grid'),
+  inputStickerSearch: $('input-sticker-search'),
+  btnSurpriseStickers: $('btn-surprise-stickers'),
+  btnUploadSticker: $('btn-upload-sticker'),
+  inputStickerUpload: $('input-sticker-upload'),
+  stickerRecentWrap: $('sticker-recent-wrap'),
+  stickerRecentRow: $('sticker-recent-row'),
   btnDrawMode: $('btn-draw-mode'),
   penColors: $('pen-colors'),
   sliderPenSize: $('slider-pen-size'),
@@ -200,7 +224,8 @@ let captureController = {
   singleRetakeIndex: null,
 };
 
-let activeStickerCat = STICKER_CATEGORIES[0].id;
+let activeStickerCat = STICKER_PACKS[0].id;
+let stickerSearchQuery = '';
 let activeTextFont = 'sans';
 let lastStampedIndex = -1;
 
@@ -284,6 +309,7 @@ function applyScreenDOM(screen) {
     els.viewEditor.classList.remove('is-entering');
     void els.viewEditor.offsetWidth;
     els.viewEditor.classList.add('is-entering');
+    renderThemeGrid(els.editorThemeGrid, state.captures);
     scheduleRender();
     syncEditorControls();
   }
@@ -558,7 +584,7 @@ async function startCaptureSession(singleRetakeIndex = null) {
   }
 
   clearCaptures();
-  state.edits = createDefaultEdits(state.session.layout, state.session.preFilter);
+  state.edits = createDefaultEdits(state.session.layout, state.session.preFilter, state.session.themeId);
   state.history.past = [];
   state.history.future = [];
   state.selection = { type: null, id: null };
@@ -703,20 +729,11 @@ function buildEditorControls() {
   });
   els.paperSwatches.appendChild(customColor);
 
-  els.stickerCatTabs.innerHTML = '';
-  for (const cat of STICKER_CATEGORIES) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'chip-btn';
-    btn.textContent = cat.label;
-    btn.dataset.cat = cat.id;
-    btn.addEventListener('click', () => {
-      activeStickerCat = cat.id;
-      renderStickerCategory();
-    });
-    els.stickerCatTabs.appendChild(btn);
-  }
+  renderStickerPackTabs();
   renderStickerCategory();
+  renderRecentStickers();
+  renderThemeGrid(els.setupThemeGrid, []);
+  renderThemeGrid(els.editorThemeGrid, []);
 
   els.penColors.innerHTML = '';
   for (const col of PEN_COLORS) {
@@ -754,20 +771,210 @@ function buildEditorControls() {
   }
 }
 
+function renderThemeGrid(container, captures = []) {
+  if (!container) return;
+  const activeId = state.screen === 'editor' ? state.edits.themeId : state.session.themeId;
+  container.innerHTML = '';
+
+  for (const theme of STRIP_THEMES) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'theme-card';
+    if (theme.id === activeId) btn.classList.add('is-active');
+    btn.setAttribute('role', 'radio');
+    btn.setAttribute('aria-checked', String(theme.id === activeId));
+    btn.setAttribute('aria-label', `${theme.name} theme: ${theme.tagline}`);
+    btn.dataset.themeId = theme.id;
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'theme-mini-canvas';
+    renderThemeMiniPreview(canvas, theme, captures);
+
+    const name = document.createElement('span');
+    name.className = 'theme-card-name';
+    name.textContent = theme.name;
+
+    btn.appendChild(canvas);
+    btn.appendChild(name);
+    btn.addEventListener('click', () => {
+      applyThemeSelection(theme.id, state.screen === 'editor');
+      activeStickerCat = theme.packId;
+      syncSetupUI();
+      renderThemeGrid(els.setupThemeGrid, []);
+      renderThemeGrid(els.editorThemeGrid, state.captures);
+      renderStickerPackTabs();
+      renderStickerCategory();
+      if (state.screen === 'editor') {
+        syncEditorControls();
+        scheduleRender();
+      }
+    });
+    container.appendChild(btn);
+  }
+}
+
+function pickRandomTheme(gridEl) {
+  const currentId = state.screen === 'editor' ? state.edits.themeId : state.session.themeId;
+  const pool = STRIP_THEMES.filter((t) => t.id !== currentId);
+  const chosen = pool[Math.floor(Math.random() * pool.length)] || STRIP_THEMES[0];
+  applyThemeSelection(chosen.id, state.screen === 'editor');
+  activeStickerCat = chosen.packId;
+  syncSetupUI();
+  renderThemeGrid(els.setupThemeGrid, []);
+  renderThemeGrid(els.editorThemeGrid, state.captures);
+  renderStickerPackTabs();
+  renderStickerCategory();
+  const card = gridEl?.querySelector(`[data-theme-id="${chosen.id}"]`);
+  if (card) card.classList.add('is-shuffling');
+  if (state.screen === 'editor') {
+    syncEditorControls();
+    scheduleRender();
+  }
+  showToast(`Theme: ${chosen.name}`);
+}
+
+function getOrderedPacks() {
+  const theme = getThemeById(state.screen === 'editor' ? state.edits.themeId : state.session.themeId);
+  const packs = [...STICKER_PACKS];
+  packs.sort((a, b) => (a.id === theme.packId ? -1 : b.id === theme.packId ? 1 : 0));
+  return packs;
+}
+
+function renderStickerPackTabs() {
+  if (!els.stickerCatTabs) return;
+  els.stickerCatTabs.innerHTML = '';
+
+  const favBtn = document.createElement('button');
+  favBtn.type = 'button';
+  favBtn.className = 'pack-tab-btn';
+  favBtn.setAttribute('role', 'tab');
+  favBtn.dataset.cat = '__favs__';
+  favBtn.setAttribute('aria-label', 'Favorites pack');
+  favBtn.innerHTML = `<span>★ Favs</span>`;
+  favBtn.addEventListener('click', () => {
+    activeStickerCat = '__favs__';
+    renderStickerCategory();
+  });
+  els.stickerCatTabs.appendChild(favBtn);
+
+  for (const pack of getOrderedPacks()) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pack-tab-btn';
+    btn.setAttribute('role', 'tab');
+    btn.dataset.cat = pack.id;
+    btn.setAttribute('aria-label', `${pack.name} sticker pack`);
+    btn.innerHTML = `${pack.iconSvg}<span>${pack.name}</span>`;
+    btn.addEventListener('click', () => {
+      activeStickerCat = pack.id;
+      renderStickerCategory();
+    });
+    els.stickerCatTabs.appendChild(btn);
+  }
+
+  const customBtn = document.createElement('button');
+  customBtn.type = 'button';
+  customBtn.className = 'pack-tab-btn';
+  customBtn.setAttribute('role', 'tab');
+  customBtn.dataset.cat = '__custom__';
+  customBtn.setAttribute('aria-label', 'Uploaded custom stickers');
+  customBtn.textContent = 'My Uploads';
+  customBtn.addEventListener('click', () => {
+    activeStickerCat = '__custom__';
+    renderStickerCategory();
+  });
+  els.stickerCatTabs.appendChild(customBtn);
+}
+
+function renderRecentStickers() {
+  if (!els.stickerRecentWrap || !els.stickerRecentRow) return;
+  const recentIds = getRecentStickerIds();
+  if (recentIds.length === 0) {
+    els.stickerRecentWrap.hidden = true;
+    return;
+  }
+  els.stickerRecentWrap.hidden = false;
+  els.stickerRecentRow.innerHTML = '';
+  for (const id of recentIds) {
+    const def = ALL_STICKERS.find((s) => s.id === id);
+    if (!def) continue;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'sticker-pick-btn';
+    btn.setAttribute('aria-label', `Add recent ${def.label}`);
+    btn.innerHTML = renderStickerSvg(def.id);
+    btn.addEventListener('click', () => {
+      addStickerOverlay(def.id);
+      renderRecentStickers();
+    });
+    els.stickerRecentRow.appendChild(btn);
+  }
+}
+
 function renderStickerCategory() {
-  for (const btn of els.stickerCatTabs.querySelectorAll('.chip-btn')) {
-    btn.classList.toggle('is-active', btn.dataset.cat === activeStickerCat);
+  for (const btn of els.stickerCatTabs.querySelectorAll('.pack-tab-btn')) {
+    const active = btn.dataset.cat === activeStickerCat;
+    btn.classList.toggle('is-active', active);
+    btn.setAttribute('aria-selected', String(active));
   }
   els.stickerGrid.innerHTML = '';
-  const items = STICKERS.filter((s) => s.category === activeStickerCat);
+  const favs = getFavoriteStickerIds();
+
+  if (activeStickerCat === '__custom__' && !stickerSearchQuery) {
+    const customs = getCustomStickers();
+    if (customs.length === 0) {
+      els.stickerGrid.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">Upload a PNG or SVG to save your own sticker locally.</div>';
+      return;
+    }
+    for (const c of customs) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'sticker-pick-btn';
+      btn.setAttribute('aria-label', `Add custom sticker ${c.label}`);
+      btn.innerHTML = `<img src="${c.dataUrl}" alt="${c.label}" />`;
+      btn.addEventListener('click', () => addStickerOverlay(c.id));
+      els.stickerGrid.appendChild(btn);
+    }
+    return;
+  }
+
+  let items = [];
+  if (stickerSearchQuery) {
+    const q = stickerSearchQuery.toLowerCase();
+    items = ALL_STICKERS.filter((s) => s.label.toLowerCase().includes(q));
+  } else if (activeStickerCat === '__favs__') {
+    items = ALL_STICKERS.filter((s) => favs.includes(s.id));
+    if (items.length === 0) {
+      els.stickerGrid.innerHTML = '<div class="empty-note" style="grid-column:1/-1;">Star any sticker to pin it to Favorites.</div>';
+      return;
+    }
+  } else {
+    items = ALL_STICKERS.filter((s) => s.packId === activeStickerCat);
+  }
+
   for (const st of items) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'sticker-pick-btn';
     btn.title = st.label;
     btn.setAttribute('aria-label', `Add ${st.label} sticker`);
-    btn.innerHTML = st.svg;
-    btn.addEventListener('click', () => addStickerOverlay(st.id));
+    btn.innerHTML = renderStickerSvg(st.id);
+
+    const star = document.createElement('span');
+    star.className = `sticker-fav-dot ${favs.includes(st.id) ? 'is-fav' : ''}`;
+    star.textContent = '★';
+    star.title = 'Toggle favorite';
+    star.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      toggleFavoriteSticker(st.id);
+      renderStickerCategory();
+    });
+
+    btn.appendChild(star);
+    btn.addEventListener('click', () => {
+      addStickerOverlay(st.id);
+      renderRecentStickers();
+    });
     els.stickerGrid.appendChild(btn);
   }
 }
@@ -964,6 +1171,50 @@ function bindEvents() {
     const btn = e.target.closest('.tab-btn');
     if (!btn) return;
     switchEditorTab(btn.dataset.tab);
+  });
+
+  // Arrow-key accessibility on tablists
+  const enableArrowTabs = (tablist) => {
+    tablist?.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+      const idx = tabs.indexOf(document.activeElement);
+      if (idx === -1) return;
+      e.preventDefault();
+      const next = tabs[(idx + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
+      next.focus();
+      next.click();
+    });
+  };
+  enableArrowTabs(els.editorTabs);
+  enableArrowTabs(els.stickerCatTabs);
+
+  els.btnRandomThemeSetup?.addEventListener('click', () => pickRandomTheme(els.setupThemeGrid));
+  els.btnRandomThemeEditor?.addEventListener('click', () => pickRandomTheme(els.editorThemeGrid));
+
+  els.inputStickerSearch?.addEventListener('input', (e) => {
+    stickerSearchQuery = e.target.value.trim();
+    renderStickerCategory();
+  });
+
+  els.btnSurpriseStickers?.addEventListener('click', () => {
+    scatterSurpriseStickers();
+    showToast('Scattered theme stickers!');
+  });
+
+  els.btnUploadSticker?.addEventListener('click', () => {
+    els.inputStickerUpload?.click();
+  });
+
+  els.inputStickerUpload?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const saved = await saveCustomStickerFile(file);
+    activeStickerCat = '__custom__';
+    renderStickerCategory();
+    addStickerOverlay(saved.id);
+    e.target.value = '';
+    showToast('Custom sticker added!');
   });
 
   els.editorLayoutGroup.addEventListener('click', (e) => {
@@ -1257,6 +1508,9 @@ async function bootstrap() {
     }
   });
 
+  await loadCustomStickers();
+  applyThemeToAppUI(getThemeById(state.session.themeId));
+  activeStickerCat = getThemeById(state.session.themeId).packId;
   syncSoundUI();
   buildEditorControls();
   syncResponsiveSetupPlacement();

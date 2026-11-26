@@ -1,6 +1,8 @@
 /**
- * Central state store with non-destructive edit history (undo/redo).
+ * Central state store with non-destructive edit history (undo/redo) and Strip Themes.
  */
+
+import { getThemeById, loadSavedThemeId, saveThemeId, applyThemeToAppUI } from './themes.js';
 
 export const DEFAULT_ADJUSTMENTS = {
   brightness: 0,
@@ -36,17 +38,22 @@ function cloneEdits(edits) {
   return JSON.parse(JSON.stringify(edits));
 }
 
-export function createDefaultEdits(layout = 'single', filter = 'bw') {
+export function createDefaultEdits(layout = 'single', filter = null, themeId = loadSavedThemeId()) {
+  const theme = getThemeById(themeId);
   return {
-    filter,
-    adjustments: { ...DEFAULT_ADJUSTMENTS },
+    themeId: theme.id,
+    filter: filter || theme.defaults.filter,
+    adjustments: {
+      ...DEFAULT_ADJUSTMENTS,
+      ...(theme.defaults.adjustments || {}),
+    },
     frame: {
       layout,
-      bgColor: '#FFFDF9',
-      borderWidth: 18,
-      cornerRadius: 2,
-      caption: '',
-      captionFont: 'mono',
+      bgColor: theme.background.color,
+      borderWidth: theme.border.thickness,
+      cornerRadius: theme.border.radius,
+      caption: theme.caption.defaultText || '',
+      captionFont: theme.caption.font || 'mono',
       showDate: true,
       showBranding: true,
     },
@@ -56,21 +63,24 @@ export function createDefaultEdits(layout = 'single', filter = 'bw') {
   };
 }
 
+const initialThemeId = loadSavedThemeId();
+
 export const state = {
-  screen: 'booth', // 'booth' | 'printing' | 'editor'
+  screen: 'booth',
   session: {
     poseCount: 4,
     layout: 'single',
     timerSeconds: 3,
-    preFilter: 'bw',
+    preFilter: getThemeById(initialThemeId).defaults.filter,
+    themeId: initialThemeId,
     facingMode: 'user',
     mirrored: true,
     soundEnabled: true,
   },
-  captures: [], // { id, bitmap, thumbUrl }
-  edits: createDefaultEdits('single', 'bw'),
+  captures: [],
+  edits: createDefaultEdits('single', null, initialThemeId),
   selection: {
-    type: null, // 'overlay' | 'photo' | null
+    type: null,
     id: null,
   },
   drawTool: {
@@ -98,6 +108,31 @@ export function notify(reason = 'update') {
   }
 }
 
+export function applyThemeSelection(themeId, recordHistory = true) {
+  const theme = getThemeById(themeId);
+  state.session.themeId = theme.id;
+  state.session.preFilter = theme.defaults.filter;
+  saveThemeId(theme.id);
+  applyThemeToAppUI(theme);
+
+  if (state.screen === 'editor' || state.captures.length > 0) {
+    if (recordHistory) pushHistory();
+    state.edits.themeId = theme.id;
+    state.edits.filter = theme.defaults.filter;
+    state.edits.adjustments = {
+      ...state.edits.adjustments,
+      ...(theme.defaults.adjustments || {}),
+    };
+    state.edits.frame.bgColor = theme.background.color;
+    state.edits.frame.borderWidth = theme.border.thickness;
+    state.edits.frame.cornerRadius = theme.border.radius;
+    state.edits.frame.captionFont = theme.caption.font;
+    state.edits.frame.caption = theme.caption.defaultText || '';
+  }
+  notify('theme');
+  return theme;
+}
+
 export function pushHistory() {
   state.history.past.push(cloneEdits(state.edits));
   if (state.history.past.length > 40) {
@@ -119,6 +154,8 @@ export function undo() {
   state.history.future.push(cloneEdits(state.edits));
   state.edits = state.history.past.pop();
   state.selection = { type: null, id: null };
+  const theme = getThemeById(state.edits.themeId);
+  applyThemeToAppUI(theme);
   notify('history');
   return true;
 }
@@ -128,13 +165,15 @@ export function redo() {
   state.history.past.push(cloneEdits(state.edits));
   state.edits = state.history.future.pop();
   state.selection = { type: null, id: null };
+  const theme = getThemeById(state.edits.themeId);
+  applyThemeToAppUI(theme);
   notify('history');
   return true;
 }
 
 export function resetEdits() {
   pushHistory();
-  state.edits = createDefaultEdits(state.session.layout, state.session.preFilter);
+  state.edits = createDefaultEdits(state.session.layout, null, state.session.themeId);
   state.selection = { type: null, id: null };
   notify('reset');
 }
@@ -150,4 +189,3 @@ export function clearCaptures() {
   }
   state.captures = [];
 }
-

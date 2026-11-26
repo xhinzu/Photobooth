@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mistletoe-photobooth-v2';
+const CACHE_NAME = 'mistletoe-photobooth-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -8,9 +8,12 @@ const ASSETS = [
   './css/layout.css',
   './css/components.css',
   './js/state.js',
+  './js/themes.js',
+  './js/theme-renderer.js',
   './js/audio.js',
   './js/camera.js',
   './js/filters.js',
+  './js/sticker-packs.js',
   './js/stickers.js',
   './js/renderer.js',
   './js/print-animation.js',

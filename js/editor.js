@@ -8,6 +8,8 @@
 
 import { state, pushHistory, notify } from './state.js';
 import { computeStripGeometry, renderStripToCanvas } from './renderer.js';
+import { getStickerDef, recordRecentSticker, detectFaceAnchor, generateSurpriseStickers } from './stickers.js';
+import { getThemeById } from './themes.js';
 
 let canvasEl = null;
 let overlayEl = null;
@@ -51,22 +53,58 @@ export function scheduleRender() {
   });
 }
 
-export function addStickerOverlay(stickerId) {
+export async function addStickerOverlay(stickerId, colorOverride = null) {
   pushHistory();
+  recordRecentSticker(stickerId);
+  const def = getStickerDef(stickerId);
   const id = `ov_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+
+  let x = 0.5;
+  let y = 0.48;
+  let scale = 1;
+
+  // Stretch goal: Face-aware placement for Face Props (non-blocking fallback)
+  if (def && def.isFaceProp && state.captures.length > 0 && lastGeom) {
+    const face = await detectFaceAnchor(state.captures[0].bitmap);
+    const slot = lastGeom.slots[0];
+    if (face && slot) {
+      let yOff = 0;
+      if (def.isFaceProp === 'head') yOff = -face.hRatio * 0.55;
+      else if (def.isFaceProp === 'eyes') yOff = -face.hRatio * 0.14;
+      else if (def.isFaceProp === 'mouth') yOff = face.hRatio * 0.24;
+      else if (def.isFaceProp === 'cheeks') yOff = face.hRatio * 0.08;
+      x = (slot.x + face.cx * slot.w) / lastGeom.width;
+      y = (slot.y + (face.cy + yOff) * slot.h) / lastGeom.height;
+      scale = Math.max(0.65, Math.min(1.4, face.wRatio * 1.9));
+    }
+  }
+
   state.edits.overlays.push({
     id,
     kind: 'sticker',
     stickerId,
-    x: 0.5,
-    y: 0.48,
-    scale: 1,
-    rotation: (Math.random() * 14 - 7) | 0,
+    color: colorOverride || (def?.colors?.[0] ?? null),
+    x,
+    y,
+    scale,
+    rotation: (Math.random() * 12 - 6) | 0,
     width: 74,
     height: 74,
+    justPlaced: true,
   });
   state.selection = { type: 'overlay', id };
   state.drawTool.active = false;
+  notify('overlay');
+  scheduleRender();
+}
+
+export function scatterSurpriseStickers() {
+  if (!lastGeom) return;
+  pushHistory();
+  const theme = getThemeById(state.edits.themeId || 'minimal');
+  const scattered = generateSurpriseStickers(theme, lastGeom.slots, lastGeom.width, lastGeom.height);
+  state.edits.overlays.push(...scattered);
+  state.selection = { type: null, id: null };
   notify('overlay');
   scheduleRender();
 }
@@ -396,6 +434,26 @@ function renderSelectionBar(type, target) {
 
   if (type === 'overlay') {
     selectionInfoEl.textContent = target.kind === 'text' ? 'TEXT LABEL' : 'STICKER';
+    if (target.kind === 'sticker') {
+      const def = getStickerDef(target.stickerId);
+      if (def && def.colors) {
+        for (const col of def.colors) {
+          const sw = document.createElement('button');
+          sw.type = 'button';
+          sw.className = 'swatch-btn mini';
+          sw.style.backgroundColor = col;
+          sw.setAttribute('aria-label', `Recolor sticker ${col}`);
+          if (target.color === col) sw.classList.add('is-active');
+          sw.addEventListener('click', () => {
+            pushHistory();
+            target.color = col;
+            notify('overlay');
+            scheduleRender();
+          });
+          selectionActionsEl.appendChild(sw);
+        }
+      }
+    }
     const buttons = [
       { label: 'Forward', action: () => reorderOverlay(target.id, 1) },
       { label: 'Back', action: () => reorderOverlay(target.id, -1) },

@@ -1,19 +1,25 @@
 /**
  * Single <canvas> rendering pipeline for photo strips.
- * Renders preview (1x) and high-res export (3x) from the exact same geometry & state.
+ * Integrates Strip Themes, Polaroid/Scrapbook/Y2K frame styles,
+ * die-cut SVG stickers, freehand ink, and 1x / 3x export parity.
  */
 
 import { applyPhotoPipeline } from './filters.js';
 import { loadStickerImage } from './stickers.js';
+import { getThemeById } from './themes.js';
+import {
+  drawThemeBackground,
+  drawThemeBorder,
+  drawThemeOverlay,
+  drawWashiTapeCorners,
+} from './theme-renderer.js';
 
-/**
- * Computes deterministic strip canvas dimensions and photo slot coordinates
- * at base 1x resolution.
- */
-export function computeStripGeometry(poseCount, layout, borderWidth = 18, hasFooter = true) {
+export function computeStripGeometry(poseCount, layout, borderWidth = 18, hasFooter = true, themeId = 'minimal') {
   const count = Math.max(1, poseCount || 4);
   const pad = Math.max(8, Number(borderWidth) || 18);
-  const gap = Math.max(8, Math.round(pad * 0.65));
+  const theme = getThemeById(themeId);
+  const extraBottom = theme.photoFrame.polaroidPadBottom || 0;
+  const gap = Math.max(8, Math.round(pad * 0.65)) + (extraBottom > 0 ? Math.round(extraBottom * 0.55) : 0);
   const footerHeight = hasFooter ? 74 : Math.round(pad * 0.4);
 
   const slots = [];
@@ -22,11 +28,11 @@ export function computeStripGeometry(poseCount, layout, borderWidth = 18, hasFoo
 
   if (layout === 'double') {
     const colW = 220;
-    const photoH = Math.round(colW * 0.75); // 4:3
+    const photoH = Math.round(colW * 0.75);
     const stripW = colW + pad * 2;
     const gutter = 6;
     width = stripW * 2 + gutter;
-    height = pad + count * photoH + (count - 1) * gap + footerHeight;
+    height = pad + count * photoH + (count - 1) * gap + extraBottom + footerHeight;
 
     for (let s = 0; s < 2; s++) {
       const xOffset = s * (stripW + gutter);
@@ -47,7 +53,7 @@ export function computeStripGeometry(poseCount, layout, borderWidth = 18, hasFoo
     const cellW = 228;
     const cellH = Math.round(cellW * 0.75);
     width = pad * 2 + cols * cellW + gap;
-    height = pad + rows * cellH + (rows - 1) * gap + footerHeight;
+    height = pad + rows * cellH + (rows - 1) * gap + extraBottom + footerHeight;
 
     for (let i = 0; i < count; i++) {
       const col = i % cols;
@@ -62,11 +68,10 @@ export function computeStripGeometry(poseCount, layout, borderWidth = 18, hasFoo
       });
     }
   } else {
-    // 'single' vertical strip
     const photoW = 288;
     const photoH = Math.round(photoW * 0.75);
     width = photoW + pad * 2;
-    height = pad + count * photoH + (count - 1) * gap + footerHeight;
+    height = pad + count * photoH + (count - 1) * gap + extraBottom + footerHeight;
 
     for (let i = 0; i < count; i++) {
       slots.push({
@@ -114,15 +119,12 @@ function getFontStack(fontKey) {
   return '"IBM Plex Mono", monospace';
 }
 
-/**
- * Renders the full strip onto `targetCanvas` at `scale` (e.g., 1 for preview, 3 for PNG export).
- * Optionally limits visible photos via `revealCount` for animated buildup GIFs.
- */
 export async function renderStripToCanvas(targetCanvas, appState, scale = 1, revealCount = Infinity) {
   const { captures, edits } = appState;
   const { frame, adjustments, perPhoto, overlays, strokes } = edits;
+  const theme = getThemeById(edits.themeId || 'minimal');
   const hasFooter = Boolean(frame.caption || frame.showDate || frame.showBranding);
-  const geom = computeStripGeometry(captures.length, frame.layout, frame.borderWidth, hasFooter);
+  const geom = computeStripGeometry(captures.length, frame.layout, frame.borderWidth, hasFooter, theme.id);
 
   targetCanvas.width = Math.round(geom.width * scale);
   targetCanvas.height = Math.round(geom.height * scale);
@@ -131,11 +133,11 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
   ctx.save();
   ctx.scale(scale, scale);
 
-  // 1. Paper Background
-  ctx.fillStyle = frame.bgColor || '#FFFDF9';
-  ctx.fillRect(0, 0, geom.width, geom.height);
+  // 1. Theme Paper Background & Below-Photo Overlay
+  drawThemeBackground(ctx, geom.width, geom.height, theme, frame.bgColor);
+  drawThemeOverlay(ctx, geom.width, geom.height, geom.slots, theme, 'below');
 
-  // If double strip, draw subtle perforation cut line down the center
+  // Double-strip perforation line
   if (frame.layout === 'double') {
     const midX = geom.width / 2;
     ctx.save();
@@ -154,9 +156,56 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
   const offCtx = offscreen.getContext('2d', { willReadFrequently: true });
 
   for (const slot of geom.slots) {
-    if (slot.photoIndex >= revealCount) {
-      // Empty unrevealed frame for buildup animation
+    const tiltDeg = theme.photoFrame.tiltMaxDeg
+      ? ((slot.photoIndex % 2 === 0 ? -1 : 1) * theme.photoFrame.tiltMaxDeg)
+      : 0;
+
+    ctx.save();
+    if (tiltDeg !== 0) {
+      const cx = slot.x + slot.w / 2;
+      const cy = slot.y + slot.h / 2;
+      ctx.translate(cx, cy);
+      ctx.rotate((tiltDeg * Math.PI) / 180);
+      ctx.translate(-cx, -cy);
+    }
+
+    // Polaroid outer white card
+    if (theme.photoFrame.shape === 'polaroid') {
       ctx.save();
+      if (theme.photoFrame.shadow) {
+        ctx.shadowColor = 'rgba(22, 20, 18, 0.22)';
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetY = 4;
+      }
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(
+        slot.x - 6,
+        slot.y - 6,
+        slot.w + 12,
+        slot.h + 6 + (theme.photoFrame.polaroidPadBottom || 22)
+      );
+      ctx.restore();
+
+      if (theme.photoFrame.perPhotoCaption) {
+        ctx.save();
+        ctx.fillStyle = '#3B342E';
+        ctx.font = 'italic 11px "DM Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`pose 0${slot.photoIndex + 1}`, slot.x + slot.w / 2, slot.y + slot.h + 15);
+        ctx.restore();
+      }
+    } else if (theme.photoFrame.shadow) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(22, 20, 18, 0.2)';
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetY = 3;
+      drawRoundedRectPath(ctx, slot.x, slot.y, slot.w, slot.h, frame.cornerRadius);
+      ctx.fillStyle = '#000000';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (slot.photoIndex >= revealCount) {
       drawRoundedRectPath(ctx, slot.x, slot.y, slot.w, slot.h, frame.cornerRadius);
       ctx.fillStyle = 'rgba(22, 20, 18, 0.08)';
       ctx.fill();
@@ -165,7 +214,10 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
     }
 
     const cap = captures[slot.photoIndex];
-    if (!cap || !cap.bitmap) continue;
+    if (!cap || !cap.bitmap) {
+      ctx.restore();
+      continue;
+    }
 
     const photoOverride = perPhoto[slot.photoIndex] || {};
     const activeFilter = photoOverride.filter || edits.filter;
@@ -186,7 +238,6 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
       offCtx.scale(-1, 1);
     }
 
-    // Center-crop zoom
     const srcW = cap.bitmap.width;
     const srcH = cap.bitmap.height;
     const cropW = srcW / zoom;
@@ -198,17 +249,41 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
 
     applyPhotoPipeline(offCtx, pw, ph, activeFilter, adjustments);
 
-    // Draw into rounded clip on main strip
+    // Draw into rounded clip
     ctx.save();
     drawRoundedRectPath(ctx, slot.x, slot.y, slot.w, slot.h, frame.cornerRadius);
     ctx.clip();
     ctx.drawImage(offscreen, slot.x, slot.y, slot.w, slot.h);
+
+    // Y2K Glossy highlight
+    if (theme.photoFrame.glossy) {
+      const gloss = ctx.createLinearGradient(slot.x, slot.y, slot.x, slot.y + slot.h * 0.45);
+      gloss.addColorStop(0, 'rgba(255, 255, 255, 0.28)');
+      gloss.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = gloss;
+      ctx.fillRect(slot.x, slot.y, slot.w, slot.h * 0.45);
+    }
+    ctx.restore();
+
+    // Scrapbook washi tape corners
+    if (theme.photoFrame.tapeCorners) {
+      drawWashiTapeCorners(ctx, slot, slot.photoIndex);
+    }
+
     ctx.restore();
   }
 
-  // 3. Footer Caption, Date Stamp, and Branding
+  // 3. Theme Border & Above-Photo Overlay
+  drawThemeBorder(ctx, geom.width, geom.height, theme);
+  drawThemeOverlay(ctx, geom.width, geom.height, geom.slots, theme, 'above');
+
+  // 4. Footer Caption, Date Stamp, and Branding
   if (hasFooter) {
-    const inkColor = getContrastInk(frame.bgColor);
+    const inkColor =
+      frame.bgColor.toLowerCase() === theme.background.color.toLowerCase()
+        ? theme.caption.color
+        : getContrastInk(frame.bgColor);
+
     const dateStr = new Date().toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -230,7 +305,7 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
       if (frame.showDate) metaParts.push(dateStr);
       if (frame.showBranding) metaParts.push('MISTLETOE STUDIO');
       if (metaParts.length > 0) {
-        ctx.globalAlpha = 0.7;
+        ctx.globalAlpha = 0.72;
         ctx.font = '500 9.5px "IBM Plex Mono", monospace';
         ctx.fillText(metaParts.join(' · '), centerX, bottomY - 14, maxW);
       }
@@ -246,7 +321,7 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
     }
   }
 
-  // 4. Freehand Ink Strokes
+  // 5. Freehand Ink Strokes
   if (strokes && strokes.length > 0) {
     const inkCanvas = document.createElement('canvas');
     inkCanvas.width = Math.round(geom.width * scale);
@@ -278,7 +353,7 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
     ctx.drawImage(inkCanvas, 0, 0, geom.width, geom.height);
   }
 
-  // 5. Stickers & Text Overlays
+  // 6. Die-Cut Stickers & Text Overlays
   if (overlays && overlays.length > 0) {
     for (const item of overlays) {
       const cx = item.x * geom.width;
@@ -289,10 +364,10 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
       ctx.scale(item.scale || 1, item.scale || 1);
 
       if (item.kind === 'sticker') {
-        const img = await loadStickerImage(item.stickerId);
+        const img = await loadStickerImage(item.stickerId, item.color || null, true);
         if (img) {
-          const w = item.width || 68;
-          const h = item.height || 68;
+          const w = item.width || 72;
+          const h = item.height || 72;
           ctx.drawImage(img, -w / 2, -h / 2, w, h);
         }
       } else if (item.kind === 'text') {
@@ -311,4 +386,3 @@ export async function renderStripToCanvas(targetCanvas, appState, scale = 1, rev
   ctx.restore();
   return geom;
 }
-
